@@ -62,7 +62,7 @@
 
 /* Polling work */
 #undef	DEBUG_FUELGAUGE_POLLING
-#define MAX17047_POLLING_INTERVAL	10000
+#define MAX17047_POLLING_INTERVAL	20000
 
 /* adjust full soc */
 #define FULL_SOC_DEFAULT	9850
