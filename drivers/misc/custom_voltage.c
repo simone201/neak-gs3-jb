@@ -20,32 +20,50 @@ extern void customvoltage_freqvolt(unsigned long * freqs, unsigned long * int_vo
 
 static int num_freqs;
 
-static int * int_voltages = NULL;
-static int * freqs = NULL;
+static unsigned long * int_voltages = NULL;
+static unsigned long * freqs = NULL;
 
 static ssize_t customvoltage_intvolt_read(struct device * dev, struct device_attribute * attr, char * buf) {
     
     int i, j = 0;
 
     for (i = 0; i < num_freqs; i++) {
-		j += sprintf(buf + j, "%dmhz: %d mV\n", freqs[i] / 1000, int_voltages[i] / 1000);
+		j += sprintf(&buf[j], "%lumhz: %lu mV\n", freqs[i] / 1000, int_voltages[i] / 1000);
 	}
 
     return j;
 }
 
 static ssize_t customvoltage_intvolt_write(struct device * dev, struct device_attribute * attr, const char * buf, size_t size) {
-    unsigned int ret = -EINVAL;
-    int i = 0;
+    int i = 0, j = 0, next_freq = 0;
+    unsigned long voltage;
 
-    ret = sscanf(buf, "%d %d %d %d %d %d %d", &int_voltages[0], &int_voltages[1], &int_voltages[2], &int_voltages[3], &int_voltages[4], &int_voltages[5], &int_voltages[6]);
-    
-    if(ret != 7)
-		return -EINVAL;
-	else
-		customvoltage_updateintvolt(int_voltages);
+    char buffer[20];
 
-    return size;
+    while (1) {
+		buffer[j] = buf[i];
+
+		i++;
+		j++;
+
+		if (buf[i] == ' ' || buf[i] == '\0') {
+			buffer[j] = '\0';
+
+			if (sscanf(buffer, "%lu", &voltage) == 1) {
+				int_voltages[next_freq] = voltage * 1000;
+
+				next_freq++;
+			}
+
+			if (buf[i] == '\0' || next_freq >= num_freqs) {
+				break;
+			}
+
+			j = 0;
+		}
+	}
+
+    customvoltage_updateintvolt(int_voltages);
 }
 
 static ssize_t customvoltage_version(struct device * dev, struct device_attribute * attr, char * buf) {

@@ -1150,7 +1150,7 @@ EXPORT_SYMBOL(customvoltage_numfreqs);
 void customvoltage_freqvolt(unsigned long * freqs, unsigned long * int_voltages) {
     int i = 0;    
 
-	 while (exynos4_busfreq_table[i].mem_clk != LV_END) {
+	while (exynos4_busfreq_table[i].idx < LV_END) {
 		freqs[i] = exynos4_busfreq_table[i].mem_clk;
 		i++;
     }
