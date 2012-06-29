@@ -70,6 +70,11 @@ static bool int_locking;
 /* To save/restore DMC_PAUSE_CTRL register */
 static unsigned int dmc_pause_ctrl;
 
+/* Custom Voltage */
+#ifdef CONFIG_CUSTOM_VOLTAGE
+extern void customvoltage_cpu_init(void);
+#endif
+
 enum busfreq_level_idx {
 	LV_0,
 	LV_1,
@@ -1072,6 +1077,10 @@ int exynos4x12_init(struct device *dev, struct busfreq_data *data)
 	data->exynos_busqos_notifier.notifier_call = exynos4x12_bus_qos_notifiy;
 	exynos4x12_bus_qos_notifier_init(&data->exynos_busqos_notifier);
 
+#ifdef CONFIG_CUSTOM_VOLTAGE
+	customvoltage_cpu_init();
+#endif
+
 	return 0;
 }
 
@@ -1100,12 +1109,10 @@ ssize_t store_int_mV_table(struct cpufreq_policy *policy,
 		return -EINVAL;
 	
 	for( i = 0; i < LV_END; i++ ) {
-		if (u[i] > CPU_INT_MAX_UV / 1000)
-		{
+		if (u[i] > CPU_INT_MAX_UV / 1000) {
 			u[i] = CPU_INT_MAX_UV / 1000;
 		}
-		else if (u[i] < CPU_INT_MIN_UV / 1000)
-		{
+		else if (u[i] < CPU_INT_MIN_UV / 1000) {
 			u[i] = CPU_INT_MIN_UV / 1000;
 		}
 	}
@@ -1115,3 +1122,44 @@ ssize_t store_int_mV_table(struct cpufreq_policy *policy,
 	}
 	return count;
 }
+
+/* CUSTOM VOLTAGE INTERFACE - thx to Ezekeel */
+#ifdef CONFIG_CUSTOM_VOLTAGE
+void customvoltage_updateintvolt(unsigned long * int_voltages)
+{
+    int i;
+
+    for (i = 0; i < LV_END; i++) {
+		if (int_voltages[i] > CPU_INT_MAX_UV)
+			int_voltages[i] = CPU_INT_MAX_UV;
+		else if (int_voltages[i] < CPU_INT_MIN_UV)
+			int_voltages[i] = CPU_INT_MIN_UV;
+			
+		exynos4_busfreq_table[i].volt = int_voltages[i];
+    }
+
+    return;
+}
+EXPORT_SYMBOL(customvoltage_updateintvolt);
+
+int customvoltage_numfreqs(void) {
+    return LV_END;
+}
+EXPORT_SYMBOL(customvoltage_numfreqs);
+
+void customvoltage_freqvolt(unsigned long * freqs, unsigned long * int_voltages) {
+    int i = 0;    
+
+	 while (exynos4_busfreq_table[i].mem_clk != LV_END) {
+		freqs[i] = exynos4_busfreq_table[i].mem_clk;
+		i++;
+    }
+
+    for (i = 0; i < LV_END; i++) {
+		int_voltages[i] = exynos4_busfreq_table[i].volt;
+    }
+
+    return;
+}
+EXPORT_SYMBOL(customvoltage_freqvolt);
+#endif
