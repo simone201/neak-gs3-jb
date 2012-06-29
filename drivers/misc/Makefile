@@ -88,3 +88,6 @@ obj-$(CONFIG_MOBICORE_SUPPORT)  += tzic.o
 
 # Custom Voltage
 obj-$(CONFIG_CUSTOM_VOLTAGE)  += custom_voltage.o
+
+# FSync Control
+obj-$(CONFIG_FSYNC_CONTROL)  += fsync_control.o
