@@ -860,7 +860,8 @@ ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
     for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
     {
       if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
-      len += sprintf(buf + len, "%dmhz: %d mV\n", exynos_info->freq_table[i].frequency/1000,exynos_info->volt_table[i]/1000);
+      len += sprintf(buf + len, "%dmhz: %d mV\n", exynos_info->freq_table[i].frequency/1000, 
+					((exynos_info->volt_table[i] % 1000) + exynos_info->volt_table[i])/1000);
     }
   }
   return len;
@@ -881,27 +882,30 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 		if(ret != 13) {
 			ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], 
 															&u[7], &u[8], &u[9], &u[10], &u[11]);
-			if( ret != 12) return -EINVAL;
+			if( ret != 12)
+				return -EINVAL;
 		}
 	}
 		
 	for( i = 0; i < 14; i++ )
 	{
-		if (u[i] > CPU_UV_MV_MAX / 1000)
-		{
-			u[i] = CPU_UV_MV_MAX / 1000;
+		u[i] *= 1000;
+		// round down voltages - thx to AndreiLux
+		if(u[i] % 12500)
+			u[i] = (u[i] / 12500) * 12500;
+		
+		if (u[i] > CPU_UV_MV_MAX) {
+			u[i] = CPU_UV_MV_MAX;
 		}
-		else if (u[i] < CPU_UV_MV_MIN / 1000)
-		{
-			u[i] = CPU_UV_MV_MIN / 1000;
+		else if (u[i] < CPU_UV_MV_MIN) {
+			u[i] = CPU_UV_MV_MIN;
 		}
 	}
 	
-	for( i = 0; i < 14; i++ )
-	{
+	for( i = 0; i < 14; i++ ) {
 		while(exynos_info->freq_table[i+j].frequency==CPUFREQ_ENTRY_INVALID)
 			j++;
-		exynos_info->volt_table[i+j] = u[i]*1000;
+		exynos_info->volt_table[i+j] = u[i];
 	}
 	return count;
 }
