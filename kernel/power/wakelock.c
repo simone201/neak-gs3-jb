@@ -197,56 +197,6 @@ static void update_sleep_wait_stats_locked(int done)
 	}
 	last_sleep_time_update = now;
 }
-<<<<<<< HEAD
-=======
-
-static void assign_next_awake_culprit_locked(void)
-{
-	struct wake_lock *lock;
-	struct wake_lock *candidate_lock;
-	long timeout;
-	long max_timeout;
-
-	candidate_lock = NULL;
-	max_timeout = 0;
-	list_for_each_entry(lock, &active_wake_locks[WAKE_LOCK_SUSPEND], link) {
-		if (!(lock->flags & WAKE_LOCK_AUTO_EXPIRE)) {
-			// Out of the non-expiring locks, prefer the oldest inserted ones (further in the list)
-			candidate_lock = lock;
-			max_timeout = -1;
-		} else {
-			if (candidate_lock && (max_timeout < 0))
-				// Already chose the 1st non-expiring lock, use it
-				break;
-
-			// For the expiring locks, select the one with a greater expiration timeout
-			timeout = lock->expires - jiffies;
-			if ((timeout > 0) && (timeout > max_timeout)) {
-				max_timeout = timeout;
-				candidate_lock = lock;
-				// Continue searching for a lock with greater expiration timeout
-			}
-		}
-	}
-	if (candidate_lock) {
-		// Account PREVENTING_SUSPEND time before assigning new culprit
-		if (wake_lock_active(&main_wake_lock)) {
-			// Update times but keep all active locks as *not* PREVENTING_SUSPEND, "main" is active
-			update_sleep_wait_stats_locked(1);
-		} else {
-			// Update times and set all active locks as PREVENTING_SUSPEND, "main" is not active and the device
-			// could be sleeping
-			update_sleep_wait_stats_locked(0);
-		}
-		// Set now as the last_time of the culprit
-		candidate_lock->exclusive_stat.last_time = ktime_get();
-		// Assign new culprit
-		candidate_lock->flags |= WAKE_LOCK_AWAKE_CULPRIT;
-		if (debug_mask & DEBUG_WAKE_LOCK)
-			pr_info("wake lock %s, new culprit for awake\n", candidate_lock->name);
-	}
-}
->>>>>>> 1c6da6e... wakelock: main_wake_lock fix by tungstwenty
 #endif
 
 
@@ -464,11 +414,6 @@ void wake_lock_destroy(struct wake_lock *lock)
 		pr_info("wake_lock_destroy name=%s\n", lock->name);
 	spin_lock_irqsave(&list_lock, irqflags);
 	lock->flags &= ~WAKE_LOCK_INITIALIZED;
-<<<<<<< HEAD
-=======
-	lock->flags &= ~WAKE_LOCK_ACTIVE;
-	list_del(&lock->link);
->>>>>>> 1c6da6e... wakelock: main_wake_lock fix by tungstwenty
 #ifdef CONFIG_WAKELOCK_STAT
 	if (lock->stat.count) {
 		deleted_wake_locks.stat.count += lock->stat.count;
