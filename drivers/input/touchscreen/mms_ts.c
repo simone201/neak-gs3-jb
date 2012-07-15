@@ -401,15 +401,27 @@ static void set_dvfs_off(struct work_struct *work)
 	mutex_unlock(&info->dvfs_lock);
 	}
 
+#define TOUCH_BOOSTER_FREQLOCK 600000
+
 static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 {
-	int ret;
+	int ret,max_freq,freq_lock;
 
 	mutex_lock(&info->dvfs_lock);
-	if (info->cpufreq_level <= 0) {
-		ret = exynos_cpufreq_get_level(800000, &info->cpufreq_level);
-		if (ret < 0)
-			pr_err("[TSP] exynos_cpufreq_get_level error");
+	
+	// Setting policy->max freq set by user as touchbooster freq
+	// only if it is less than the default touchbooster freq set by the kernel define
+	// by simone201
+	max_freq = exynos_cpufreq_get_maxfreq();
+	if(max_freq < TOUCH_BOOSTER_FREQLOCK)
+		freq_lock = max_freq;
+	else
+		freq_lock = TOUCH_BOOSTER_FREQLOCK;
+	
+	// We should force the research of the cpu lock level, because it might be changed - simone201
+	ret = exynos_cpufreq_get_level(freq_lock, &info->cpufreq_level);
+	if (ret < 0) {
+		pr_err("[TSP] exynos_cpufreq_get_level error");
 		goto out;
 	}
 	if (on == 0) {

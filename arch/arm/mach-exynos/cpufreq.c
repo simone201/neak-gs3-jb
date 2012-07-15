@@ -252,6 +252,15 @@ int exynos_cpufreq_get_level(unsigned int freq, unsigned int *level)
 }
 EXPORT_SYMBOL_GPL(exynos_cpufreq_get_level);
 
+// Get the max frequency set
+// Helps in the touchbooster setting
+// by simone201
+int exynos_cpufreq_get_maxfreq() {
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	
+	return policy->max;
+}
+
 atomic_t exynos_cpufreq_lock_count;
 
 int exynos_cpufreq_lock(unsigned int nId,
