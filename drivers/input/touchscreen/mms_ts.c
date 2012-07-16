@@ -401,7 +401,7 @@ static void set_dvfs_off(struct work_struct *work)
 	mutex_unlock(&info->dvfs_lock);
 	}
 
-#define TOUCH_BOOSTER_FREQLOCK 600000
+#define TOUCH_BOOSTER_FREQLOCK 700000
 
 static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 {
