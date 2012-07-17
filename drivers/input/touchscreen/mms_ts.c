@@ -405,7 +405,7 @@ static void set_dvfs_off(struct work_struct *work)
 
 static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 {
-	int ret,max_freq,freq_lock;
+	int ret,max_freq,cur_freq,freq_lock;
 
 	mutex_lock(&info->dvfs_lock);
 	
@@ -417,6 +417,13 @@ static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 		freq_lock = max_freq;
 	else
 		freq_lock = TOUCH_BOOSTER_FREQLOCK;
+		
+	// Disable touchbooster if the current frequency is higher than the touchbooster dvfs freq
+	// Helps in avoiding stuttering and lags while using heavy tasks
+	// by simone201
+	cur_freq = exynos_cpufreq_get_curfreq();
+	if(cur_freq > freq_lock)
+		goto out;
 	
 	// We should force the research of the cpu lock level, because it might be changed - simone201
 	ret = exynos_cpufreq_get_level(freq_lock, &info->cpufreq_level);
