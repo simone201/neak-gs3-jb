@@ -19,7 +19,7 @@
 
 #include "gpu_clock_control.h"
 
-#define GPU_MAX_CLOCK 600
+#define GPU_MAX_CLOCK 800
 #define GPU_MIN_CLOCK 10
 
 typedef struct mali_dvfs_tableTag{
