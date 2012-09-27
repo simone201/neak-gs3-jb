@@ -516,7 +516,7 @@ static struct regulator_init_data ldo25_redwood_init_data = {
 static struct regulator_init_data max77686_buck1_data = {
 	.constraints = {
 		.name = "vdd_mif range",
-		.min_uV = 850000,
+		.min_uV = 600000,
 #ifdef CONFIG_SLP
 		.max_uV = 1100000,
 #else
