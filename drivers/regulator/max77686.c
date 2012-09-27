@@ -108,7 +108,7 @@ static const struct voltage_map_desc buck_dvs_voltage_map_desc = {
 
 /* Buck1, 5 ~ 9 (uV) */
 static const struct voltage_map_desc buck_voltage_map_desc = {
-	.min = 750000,	.max = 3900000,	.step = 50000,	.n_bits = 6,
+	.min = 600000,	.max = 3900000,	.step = 50000,	.n_bits = 6,
 };
 
 static const struct voltage_map_desc *reg_voltage_map[] = {
