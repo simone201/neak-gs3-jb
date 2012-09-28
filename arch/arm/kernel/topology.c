@@ -30,6 +30,8 @@
 #include <linux/uaccess.h>	/* for copy_from_user */
 #endif
 
+#include <linux/notifier.h>
+
 #include <asm/cputype.h>
 #include <asm/topology.h>
 
@@ -244,6 +246,9 @@ int arch_sd_sibling_asym_packing(void)
 	return 0;
 }
 
+static unsigned int prev_sched_mc_power_savings = 0;
+static unsigned int prev_sched_smt_power_savings = 0;
+
 /*
  * default topology function
  */
@@ -271,7 +276,11 @@ static void clear_cpu_topology_mask(void)
  * default_cpu_topology_mask set the core and thread mask as described in the
  * ARM ARM
  */
+<<<<<<< HEAD
 static inline void default_cpu_topology_mask(unsigned int cpuid)
+=======
+static void default_cpu_topology_mask(unsigned int cpuid)
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 {
 	struct cputopo_arm *cpuid_topo = &cpu_topology[cpuid];
 	unsigned int cpu;
@@ -303,7 +312,10 @@ static void normal_cpu_topology_mask(void)
 
 	for_each_possible_cpu(cpuid) {
 		default_cpu_topology_mask(cpuid);
+<<<<<<< HEAD
 		set_power_scale(cpuid, ARM_CORTEX_A9_DEFAULT_SCALE);
+=======
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 	}
 	smp_wmb();
 }
@@ -312,6 +324,7 @@ static void normal_cpu_topology_mask(void)
  * For Cortex-A9 MPcore, we emulate a multi-package topology in power mode.
  * The goal is to gathers tasks on 1 virtual package
  */
+<<<<<<< HEAD
 static void power_cpu_topology_mask_CA9(void)
 {
 	unsigned int cpuid, cpu;
@@ -339,11 +352,52 @@ static void power_cpu_topology_mask_CA9(void)
 			}
 		}
 		set_power_scale(cpuid, ARM_CORTEX_A9_POWER_SCALE);
+=======
+static void power_cpu_topology_mask_CA9(unsigned int cpuid)
+{
+	struct cputopo_arm *cpuid_topo = &cpu_topology[cpuid];
+	unsigned int cpu;
+
+	for_each_possible_cpu(cpu) {
+		struct cputopo_arm *cpu_topo = &cpu_topology[cpu];
+
+		if ((cpuid_topo->socket_id == cpu_topo->socket_id)
+		&& ((cpuid & 0x1) == (cpu & 0x1))) {
+			cpumask_set_cpu(cpuid, &cpu_topo->core_sibling);
+			if (cpu != cpuid)
+				cpumask_set_cpu(cpu,
+					&cpuid_topo->core_sibling);
+
+			if (cpuid_topo->core_id == cpu_topo->core_id) {
+				cpumask_set_cpu(cpuid,
+					&cpu_topo->thread_sibling);
+				if (cpu != cpuid)
+					cpumask_set_cpu(cpu,
+						&cpuid_topo->thread_sibling);
+			}
+		}
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 	}
 	smp_wmb();
 }
 
+<<<<<<< HEAD
 #define ARM_FAMILY_MASK 0xFF0FFFF0
+=======
+static int need_topology_update(void)
+{
+	int update;
+
+	update = ((prev_sched_mc_power_savings ^ sched_mc_power_savings)
+	       || (prev_sched_smt_power_savings ^ sched_smt_power_savings));
+
+	prev_sched_mc_power_savings = sched_mc_power_savings;
+	prev_sched_smt_power_savings = sched_smt_power_savings;
+
+	return update;
+}
+
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 #define ARM_CORTEX_A9_FAMILY 0x410FC090
 
 /* update_cpu_topology_policy select a cpu topology policy according to the
@@ -352,11 +406,16 @@ static void power_cpu_topology_mask_CA9(void)
  * might not be true. We need to update it to take into account various
  * configuration among which system with different kind of core.
  */
+<<<<<<< HEAD
 static int update_cpu_topology_policy(void)
+=======
+static int update_cpu_topology_mask(void)
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 {
 	unsigned long cpuid;
 
 	if (sched_mc_power_savings == POWERSAVINGS_BALANCE_NONE) {
+<<<<<<< HEAD
 		set_cpu_topology_mask = normal_cpu_topology_mask;
 		return 0;
 	}
@@ -371,6 +430,23 @@ static int update_cpu_topology_policy(void)
 	default:
 		set_cpu_topology_mask = normal_cpu_topology_mask;
 	break;
+=======
+		normal_cpu_topology_mask();
+		return 0;
+	}
+
+	for_each_possible_cpu(cpuid) {
+		struct cputopo_arm *cpuid_topo = &(cpu_topology[cpuid]);
+
+		switch (cpuid_topo->id) {
+		case ARM_CORTEX_A9_FAMILY:
+			power_cpu_topology_mask_CA9(cpuid);
+		break;
+		default:
+			default_cpu_topology_mask(cpuid);
+		break;
+		}
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 	}
 
 	return 0;
@@ -434,6 +510,10 @@ void store_cpu_topology(unsigned int cpuid)
 	 * call of arch_update_cpu_topology
 	 */
 	default_cpu_topology_mask(cpuid);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 
 	printk(KERN_INFO "CPU%u: thread %d, cpu %d, socket %d, mpidr %x\n",
 		cpuid, cpu_topology[cpuid].thread_id,
@@ -447,17 +527,26 @@ void store_cpu_topology(unsigned int cpuid)
  */
 int arch_update_cpu_topology(void)
 {
+<<<<<<< HEAD
 	if (!advanced_topology)
+=======
+	if (!need_topology_update())
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 		return 0;
 
 	/* clear core threads mask */
 	clear_cpu_topology_mask();
 
+<<<<<<< HEAD
 	/* set topology policy */
 	update_cpu_topology_policy();
 
 	/* set topology mask and power */
 	(*set_cpu_topology_mask)();
+=======
+	/* set topology mask */
+	update_cpu_topology_mask();
+>>>>>>> 6c0b1fa... ARM: topology: Update topology according to current sched_mc mode
 
 	return 1;
 }
