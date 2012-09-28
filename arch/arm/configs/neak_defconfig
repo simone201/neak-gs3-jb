@@ -2828,6 +2828,11 @@ CONFIG_STAGING=y
 # CONFIG_TRANZPORT is not set
 
 #
+# CPU Power
+#
+CONFIG_CPUPOWER=y
+
+#
 # Android
 #
 CONFIG_ANDROID=y
