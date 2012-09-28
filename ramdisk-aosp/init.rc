@@ -529,3 +529,12 @@ on property:service.adb.tcp.port=5555
 on property:service.adb.tcp.port=-1
     stop adbd
     start adbd
+
+on property:dev.sfbootcomplete=1
+	write /sys/block/mmcblk0/queue/scheduler vr
+	write /sys/block/mmcblk1/queue/scheduler vr
+
+service post-init /sbin/post-init.sh
+    class core
+    user root
+    oneshot

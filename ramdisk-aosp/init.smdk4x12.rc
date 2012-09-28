@@ -19,8 +19,10 @@ on early-init
 
     mkdir /efs 0771 radio system
 
-# ko files for FM Radio
-    insmod /system/lib/modules/Si4709_driver.ko
+# ko files
+    insmod /lib/modules/btlock.ko
+    insmod /lib/modules/dhd.ko
+    insmod /lib/modules/scsi_wait_scan.ko
 
 on fs
     mount_all /fstab.smdk4x12
