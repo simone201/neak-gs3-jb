@@ -19,6 +19,7 @@
 #include <linux/notifier.h>
 #include <linux/cpufreq.h>
 #include <linux/power/cpupower.h>
+#include <asm/topology.h>
 
 static struct cputopo_power **table_config = NULL;
 

@@ -72,10 +72,6 @@ static inline void store_cpu_topology(unsigned int cpuid) { }
 }
 #endif
 
-static inline void set_power_scale(unsigned int cpu, unsigned int power) { }
-static inline int topology_register_notifier(struct notifier_block *nb)  { }
-static inline int topology_unregister_notifier(struct notifier_block *nb)  { }
-
 /* Topology notifier event */
 #define TOPOLOGY_POSTCHANGE 0
 

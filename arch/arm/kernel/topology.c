@@ -154,7 +154,7 @@ static void set_cpufreq_scale(unsigned int cpuid, unsigned int freq)
 	smp_wmb();
 }
 
-static void set_power_scale(unsigned int cpu, unsigned int idx)
+/*static */void set_power_scale(unsigned int cpu, unsigned int idx)
 {
 	cpu_power[cpu].id = idx;
 	cpu_power[cpu].power = table_config[idx];
