@@ -743,5 +743,11 @@ config FSYNC_CONTROL
     default y
     help
       Say Y here to enable FSync Control
+      
+config TOUCHBOOST_CONTROL
+    bool "Support for TouchBoost Control"
+    default y
+    help
+      Say Y here to enable TouchBoost Control
 
 endif # MISC_DEVICES

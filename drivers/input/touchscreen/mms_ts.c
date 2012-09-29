@@ -50,6 +50,9 @@
 
 #include <asm/unaligned.h>
 
+// Touch Boost Control
+#include <linux/touch_boost_control.h>
+
 #define MAX_FINGERS		10
 #define MAX_WIDTH		30
 #define MAX_PRESSURE		255
@@ -137,6 +140,8 @@ enum {
 
 struct device *sec_touchscreen;
 static struct device *bus_dev;
+
+unsigned int boost_freq = 700000;
 
 int touch_is_pressed = 0;
 
@@ -401,8 +406,6 @@ static void set_dvfs_off(struct work_struct *work)
 	mutex_unlock(&info->dvfs_lock);
 	}
 
-#define TOUCH_BOOSTER_FREQLOCK 700000
-
 static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 {
 	int ret,max_freq,cur_freq,freq_lock;
@@ -413,10 +416,10 @@ static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 	// only if it is less than the default touchbooster freq set by the kernel define
 	// by simone201
 	max_freq = exynos_cpufreq_get_maxfreq();
-	if(max_freq < TOUCH_BOOSTER_FREQLOCK)
+	if(max_freq < boost_freq)
 		freq_lock = max_freq;
 	else
-		freq_lock = TOUCH_BOOSTER_FREQLOCK;
+		freq_lock = boost_freq;
 		
 	// Disable touchbooster if the current frequency is higher than the touchbooster dvfs freq
 	// Helps in avoiding stuttering and lags while using heavy tasks
@@ -3225,6 +3228,10 @@ static struct i2c_driver mms_ts_driver = {
 		   },
 	.id_table = mms_ts_id,
 };
+
+void update_boost_freq (unsigned int input_boost_freq) {
+	boost_freq = input_boost_freq;
+}
 
 static int __init mms_ts_init(void)
 {

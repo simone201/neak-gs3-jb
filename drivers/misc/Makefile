@@ -91,3 +91,6 @@ obj-$(CONFIG_CUSTOM_VOLTAGE)  += custom_voltage.o
 
 # FSync Control
 obj-$(CONFIG_FSYNC_CONTROL)  += fsync_control.o
+
+# TouchBooster Control
+obj-$(CONFIG_TOUCHBOOST_CONTROL)  += touch_boost_control.o
