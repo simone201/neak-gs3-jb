@@ -8993,7 +8993,7 @@ static s32 __wl_cfg80211_down(struct wl_priv *wl)
 	struct net_info *iter, *next;
 	struct net_device *ndev = wl_to_prmry_ndev(wl);
 #ifdef WL_ENABLE_P2P_IF
-	struct wiphy *wiphy = wl_to_prmry_ndev(wl)->ieee80211_ptr->wiphy;
+	//struct wiphy *wiphy = wl_to_prmry_ndev(wl)->ieee80211_ptr->wiphy;
 #if !defined(CUSTOMER_HW4)
 	struct net_device *p2p_net = wl->p2p_net;
 #endif /* !defined(CUSTOMER_HW4) */
