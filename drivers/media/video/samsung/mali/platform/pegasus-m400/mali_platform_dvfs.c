@@ -149,7 +149,7 @@ static unsigned int asv_3d_volt_9_table_for_prime[MALI_DVFS_STEPS][ASV_LEVEL_PRI
 mali_dvfs_currentstatus maliDvfsStatus;
 int mali_dvfs_control=0;
 
-static u32 mali_dvfs_utilization = 255;
+u32 mali_dvfs_utilization = 255;
 
 static void mali_dvfs_work_handler(struct work_struct *w);
 
