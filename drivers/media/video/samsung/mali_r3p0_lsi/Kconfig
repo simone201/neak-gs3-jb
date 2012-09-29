@@ -39,12 +39,12 @@ int "Dedicated Memory Size"
    ---help---
        This value is dedicated memory size of Mali GPU(unit is MByte).
 	   
-config MALI_R3P1_LSI
-	bool "Uses the R3P1 as a kernel module"
+config MALI_R3P0_LSI
+	bool "Uses the R3P0 as a kernel module"
 	depends on VIDEO_MALI400MP
 	default n
 	---help---
-        This uses the r3p1 as a MALI kernel module
+        This uses the r3p0 as a MALI kernel module
 
 
 # For DEBUG

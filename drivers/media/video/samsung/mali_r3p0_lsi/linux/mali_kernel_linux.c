@@ -88,11 +88,6 @@ extern int mali_gpu_clk;
 module_param(mali_gpu_clk, int, S_IRUSR | S_IRGRP | S_IROTH); /* r--r--r-- */
 MODULE_PARM_DESC(mali_gpu_clk, "Mali Current Clock");
 
-//thanks to michyprima@XDA
-extern int mali_dvfs_utilization;
-module_param(mali_dvfs_utilization, int, S_IRUSR | S_IRGRP | S_IROTH); /* r--r--r-- */
-MODULE_PARM_DESC(mali_dvfs_utilization, "Mali Current Utilization");
-
 extern int mali_gpu_vol;
 module_param(mali_gpu_vol, int, S_IRUSR | S_IRGRP | S_IROTH); /* r--r--r-- */
 MODULE_PARM_DESC(mali_gpu_vol, "Mali Current Voltage");
@@ -100,14 +95,11 @@ MODULE_PARM_DESC(mali_gpu_vol, "Mali Current Voltage");
 extern int gpu_power_state;
 module_param(gpu_power_state, int, S_IRUSR | S_IRGRP | S_IROTH); /* r--r--r-- */
 MODULE_PARM_DESC(gpu_power_state, "Mali Power State");
-#endif
-
 
 static char mali_dev_name[] = "mali"; /* should be const, but the functions we call requires non-cost */
 
 /* the mali device */
 static struct mali_dev device;
-
 
 static int mali_open(struct inode *inode, struct file *filp);
 static int mali_release(struct inode *inode, struct file *filp);
@@ -535,7 +527,6 @@ static int mali_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, 
 
 	return err;
 }
-
 
 module_init(mali_driver_init);
 module_exit(mali_driver_exit);
