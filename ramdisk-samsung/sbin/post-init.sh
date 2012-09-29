@@ -111,6 +111,10 @@ echo "10" > /proc/sys/fs/lease-break-time;
 # NEAK Options
 	/sbin/busybox sh /sbin/near/neak-options.sh
 
+# Set VR as default scheduler - workaround
+echo "vr" > /sys/block/mmcblk0/queue/scheduler
+echo "vr" > /sys/block/mmcblk1/queue/scheduler
+
 echo $(date) PRE-INIT DONE of post-init.sh
 
 ##### Post-init phase #####
