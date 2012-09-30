@@ -52,15 +52,15 @@ INCLUDES += \
 		-I$(UDD_FILE_PREFIX)linux\
 		-I$(UDD_FILE_PREFIX)include\
 		-I$(UDD_FILE_PREFIX)linux/license/gpl/\
-		-I$(UDD_FILE_PREFIX)../mali/common\
-		-I$(UDD_FILE_PREFIX)../mali/linux
+		-I$(UDD_FILE_PREFIX)../mali_r3p0_lsi/common\
+		-I$(UDD_FILE_PREFIX)../mali_r3p0_lsi/linux
 
 OSKFILES+=\
-		$(KBUILDROOT)../mali/linux/mali_osk_atomics.o \
-		$(KBUILDROOT)../mali/linux/mali_osk_locks.o \
-		$(KBUILDROOT)../mali/linux/mali_osk_math.o \
-		$(KBUILDROOT)../mali/linux/mali_osk_memory.o \
-		$(KBUILDROOT)../mali/linux/mali_osk_misc.o
+		$(KBUILDROOT)../mali_r3p0_lsi/linux/mali_osk_atomics.o \
+		$(KBUILDROOT)../mali_r3p0_lsi/linux/mali_osk_locks.o \
+		$(KBUILDROOT)../mali_r3p0_lsi/linux/mali_osk_math.o \
+		$(KBUILDROOT)../mali_r3p0_lsi/linux/mali_osk_memory.o \
+		$(KBUILDROOT)../mali_r3p0_lsi/linux/mali_osk_misc.o
 
 ump-y := \
 		$(KBUILDROOT)linux/ump_kernel_linux.o \
