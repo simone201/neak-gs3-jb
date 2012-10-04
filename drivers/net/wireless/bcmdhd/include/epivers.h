@@ -49,7 +49,7 @@
 #ifdef WLTEST
 #define	EPI_VERSION_STR		"1.28.11.5 (r WLTEST)"
 #else
-#define	EPI_VERSION_STR		"1.28.11.5 (r)"
+#define	EPI_VERSION_STR		"1.28.11.5 (add_p2p_patch)"
 #endif
 #endif /* BCMINTERNAL */
 

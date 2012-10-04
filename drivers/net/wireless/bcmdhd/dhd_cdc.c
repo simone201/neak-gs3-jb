@@ -889,6 +889,13 @@ _dhd_wlfc_pullheader(athost_wl_status_info_t* ctx, void* pktbuf)
 
 	/* pull BDC header */
 	PKTPULL(ctx->osh, pktbuf, BDC_HEADER_LEN);
+
+	if (PKTLEN(ctx->osh, pktbuf) < (h->dataOffset << 2)) {
+		WLFC_DBGMESG(("%s: rx data too short (%d < %d)\n", __FUNCTION__,
+		           PKTLEN(ctx->osh, pktbuf), (h->dataOffset << 2)));
+		return BCME_ERROR;
+	}
+
 	/* pull wl-header */
 	PKTPULL(ctx->osh, pktbuf, (h->dataOffset << 2));
 	return BCME_OK;
@@ -951,7 +958,7 @@ _dhd_wlfc_rollback_packet_toq(athost_wl_status_info_t* ctx,
 		}
 		else {
 			/* remove header first */
-			_dhd_wlfc_pullheader(ctx, p);
+			rc = _dhd_wlfc_pullheader(ctx, p);
 
 			if (pkt_type == eWLFC_PKTTYPE_DELAYED) {
 				/* delay-q packets are going to delay-q */
@@ -1201,7 +1208,7 @@ _dhd_wlfc_pretx_pktprocess(athost_wl_status_info_t* ctx,
 		int gen;
 
 		/* remove old header */
-		_dhd_wlfc_pullheader(ctx, p);
+		rc = _dhd_wlfc_pullheader(ctx, p);
 
 		hslot = WLFC_PKTID_HSLOT_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
 		dhd_wlfc_hanger_get_genbit(ctx->hanger, p, hslot, &gen);
