@@ -1022,6 +1022,7 @@ static int exynos4212_vpll_set_rate(struct clk *clk, unsigned long rate)
 	}
 
 	if (i == ARRAY_SIZE(vpll_div_4212)) {
+		printk(KERN_ERR "%s: Clock Frequency to set = %ul \n", __func__, rate);
 		printk(KERN_ERR "%s: Invalid Clock VPLL Frequency\n",
 				__func__);
 		return -EINVAL;
