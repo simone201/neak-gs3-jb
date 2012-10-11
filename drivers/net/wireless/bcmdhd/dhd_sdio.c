@@ -542,7 +542,7 @@ do {												\
 												\
 	R_SDREG(intstatuserr, &bus->regs->intstatus, retries);					\
 	printf("dstatussw = 0x%x, dstatushw = 0x%x, intstatus = 0x%x\n",			\
-	        dstatussw, dstatushw, intstatuserr); 						\
+	        dstatussw, dstatushw, intstatuserr);						\
 												\
 	bus->nextlen = 0;									\
 	*finished = TRUE;									\
@@ -7484,7 +7484,7 @@ dhdsdio_download_code_file(struct dhd_bus *bus, char *pfw_path)
 {
 	int bcmerror = -1;
 	int offset = 0;
-	uint len;
+	int len;
 	void *image = NULL;
 	uint8 *memblock = NULL, *memptr;
 
@@ -7504,6 +7504,10 @@ dhdsdio_download_code_file(struct dhd_bus *bus, char *pfw_path)
 
 	/* Download image */
 	while ((len = dhd_os_get_image_block((char*)memptr, MEMBLOCK, image))) {
+		 if(len < 0){
+			bcmerror = -1;
+			goto err;
+		 }
 		bcmerror = dhdsdio_membytes(bus, TRUE, offset, memptr, len);
 		if (bcmerror) {
 			DHD_ERROR(("%s: error %d on writing %d membytes at 0x%08x\n",
