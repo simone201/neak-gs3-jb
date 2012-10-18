@@ -41,7 +41,7 @@ typedef struct mali_dvfs_staycount{
 extern mali_dvfs_staycount_table mali_dvfs_staycount[4];
 
 static ssize_t gpu_clock_show(struct device *dev, struct device_attribute *attr, char *buf) {
-	return sprintf(buf, "Step0: %d\nStep1: %d\nStep2: %d\n Step3: %d\n" 
+	return sprintf(buf, "Step0: %d\nStep1: %d\nStep2: %d\nStep3: %d\n" 
 						"Threshold0-1/up-down: %d%% %d%%\n"
 						"Threshold1-2/up-down: %d%% %d%%\n"
 						"Threshold2-3/up-down: %d%% %d%%\n",
