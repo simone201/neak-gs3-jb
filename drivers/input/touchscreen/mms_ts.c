@@ -152,7 +152,7 @@ int touch_is_pressed = 0;
 #define ISC_DL_MODE	1
 
 /* 4.8" OCTA LCD */
-#define FW_VERSION_4_8 0xBB
+#define FW_VERSION_4_8 0xBD
 
 #define MAX_FW_PATH 255
 #define TSP_FW_FILENAME "melfas_fw.bin"
