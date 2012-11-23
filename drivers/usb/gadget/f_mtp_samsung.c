@@ -741,6 +741,113 @@ static ssize_t interrupt_write(struct file *fd,
 	return ret;
 }
 
+static void read_send_work(struct work_struct *work)
+{
+	struct mtpg_dev	*dev = container_of(work, struct mtpg_dev,
+							read_send_work);
+	struct usb_composite_dev *cdev = dev->cdev;
+	struct usb_request *req = 0;
+	struct usb_container_header *hdr;
+	struct file *file;
+	loff_t file_pos = 0;
+	int64_t count = 0;
+	int xfer = 0;
+	int ret = -1;
+	int hdr_length = 0;
+	int r = 0;
+	int ZLP_flag = 0;
+
+	/* read our parameters */
+	smp_rmb();
+	file = dev->read_send_file;
+	count = dev->read_send_length;
+	hdr_length = sizeof(struct usb_container_header);
+	count += hdr_length;
+
+	printk(KERN_DEBUG "[%s:%d] offset=[%lld]\t leth+hder=[%lld]\n",
+					 __func__, __LINE__, file_pos, count);
+
+	/* Zero Length Packet should be sent if the last trasfer
+	 * size is equals to the max packet size.
+	 */
+	if ((count & (dev->bulk_in->maxpacket - 1)) == 0)
+		ZLP_flag = 1;
+
+	while (count > 0 || ZLP_flag) {
+		/*Breaking the loop after sending Zero Length Packet*/
+		if (count == 0)
+			ZLP_flag = 0;
+
+		if (dev->cancel_io == 1) {
+			dev->cancel_io = 0; /*reported to user space*/
+			r = -EIO;
+			printk(KERN_DEBUG "[%s]\t%d ret = %d\n",
+						__func__, __LINE__, r);
+			break;
+		}
+		/* get an idle tx request to use */
+		req = 0;
+		ret = wait_event_interruptible(dev->write_wq,
+				((req = mtpg_req_get(dev, &dev->tx_idle))
+							|| dev->error));
+		if (ret < 0) {
+			r = ret;
+			printk(KERN_DEBUG "[%s]\t%d ret = %d\n",
+						__func__, __LINE__, r);
+			break;
+		}
+
+		if (!req) {
+			printk(KERN_ERR "[%s]Alloc has failed\n", __func__);
+			break;
+		}
+
+		if (count > MTPG_BULK_BUFFER_SIZE)
+			xfer = MTPG_BULK_BUFFER_SIZE;
+		else
+			xfer = count;
+
+		if (hdr_length) {
+			hdr = (struct usb_container_header *)req->buf;
+			hdr->Length = __cpu_to_le32(count);
+			hdr->Type = __cpu_to_le16(2);
+			hdr->Code = __cpu_to_le16(dev->read_send_cmd);
+			hdr->TransactionID = __cpu_to_le32(dev->read_send_id);
+		}
+
+		ret = vfs_read(file, req->buf + hdr_length,
+					xfer - hdr_length, &file_pos);
+		if (ret < 0) {
+			r = ret;
+			break;
+		}
+		xfer = ret + hdr_length;
+		hdr_length = 0;
+
+		req->length = xfer;
+		ret = usb_ep_queue(dev->bulk_in, req, GFP_KERNEL);
+		if (ret < 0) {
+			dev->error = 1;
+			r = -EIO;
+			printk(KERN_DEBUG "[%s]\t%d ret = %d\n",
+						 __func__, __LINE__, r);
+			break;
+		}
+
+		count -= xfer;
+
+		req = 0;
+	}
+
+	if (req)
+		mtpg_req_put(dev, &dev->tx_idle, req);
+
+	DEBUG_MTPB("[%s] \tline = [%d] \t r = [%d]\n", __func__, __LINE__, r);
+
+	dev->read_send_result = r;
+	smp_wmb();
+}
+
 static long  mtpg_ioctl(struct file *fd, unsigned int code, unsigned long arg)
 {
 	struct mtpg_dev		*dev = fd->private_data;

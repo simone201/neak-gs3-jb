@@ -15,13 +15,17 @@ endif
 ifeq ($(CONFIG_UMP_R3P0_LSI), y)
 obj-$(CONFIG_VIDEO_UMP)		+= ump_r3p0_lsi/
 else ifeq ($(CONFIG_MACH_U1), y)
-obj-$(CONFIG_VIDEO_UMP)		+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= mali/
 else ifeq ($(CONFIG_MACH_SMDKC210), y)
-obj-$(CONFIG_VIDEO_UMP)		+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= mali/
 else ifeq ($(CONFIG_MACH_SMDKV310), y)
-obj-$(CONFIG_VIDEO_UMP)		+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= mali/
 else
-obj-$(CONFIG_VIDEO_UMP)		+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= ump/
+obj-$(CONFIG_VIDEO_MALI400MP_UMP)	+= mali/
 endif
 
 obj-$(CONFIG_VIDEO_TSI)		+= tsi/
