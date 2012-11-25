@@ -3353,9 +3353,6 @@ static void max77693_muic_usb_detect(struct work_struct *work)
 
 				mdata->usb_cb(USB_POWERED_HOST_ATTACHED);
 				break;
-			case CABLE_TYPE_AUDIODOCK_MUIC:
-				mdata->usb_cb(USB_POWERED_HOST_ATTACHED);
-				break;
 			default:
 				break;
 			}
