@@ -1219,13 +1219,13 @@ _dhd_wlfc_pretx_pktprocess(athost_wl_status_info_t* ctx,
 		if (rc == BCME_OK) {
 			hslot = WLFC_PKTID_HSLOT_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
 			dhd_wlfc_hanger_get_genbit(ctx->hanger, p, hslot, &gen);
+
 			WLFC_PKTFLAG_SET_GENERATION(htod, gen);
 			free_ctr = WLFC_PKTID_FREERUNCTR_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
 			/* push new header */
 			_dhd_wlfc_pushheader(ctx, p, send_tim_update,
 				entry->traffic_lastreported_bmp, entry->mac_handle, htod);
 		}
-	}
 	}
 	*slot = hslot;
 	return rc;
