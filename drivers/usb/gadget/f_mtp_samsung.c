@@ -136,12 +136,22 @@ struct mtpg_dev {
 	struct usb_ep		*int_in;
 	struct usb_request	*notify_req;
 
+	struct workqueue_struct *wq;
+	struct work_struct read_send_work;
+	struct file *read_send_file;
+
+	int64_t read_send_length;
+
+	uint16_t read_send_cmd;
+	uint32_t read_send_id;
+	int read_send_result;
 	atomic_t		read_excl;
 	atomic_t		write_excl;
 	atomic_t		ioctl_excl;
 	atomic_t		open_excl;
 	atomic_t		wintfd_excl;
 	char cancel_io_buf[USB_PTPREQUEST_CANCELIO_SIZE+1];
+	int cancel_io;
 };
 
 /* Global mtpg_dev Structure
@@ -1287,6 +1297,7 @@ static int mtpg_function_set_alt(struct usb_function *f,
 	dev->online = 1;
 	dev->error = 0;
 	dev->read_ready = 1;
+	dev->cancel_io = 0;
 
 	/* readers may be blocked waiting for us to go online */
 	wake_up(&dev->read_wq);
@@ -1338,6 +1349,7 @@ mtp_complete_cancel_io(struct usb_ep *ep, struct usb_request *req)
 		memset(dev->cancel_io_buf, 0, USB_PTPREQUEST_CANCELIO_SIZE+1);
 		memcpy(dev->cancel_io_buf, req->buf,
 					USB_PTPREQUEST_CANCELIO_SIZE);
+		dev->cancel_io = 1;
 		/*Debugging*/
 		for (i = 0; i < USB_PTPREQUEST_CANCELIO_SIZE; i++)
 			DEBUG_MTPB("[%s]cancel_io_buf[%d]=%x\tline = [%d]\n",
