@@ -10,7 +10,7 @@
 
 OSKOS :=linux
 FILES_PREFIX=
-MALI_INCLUDE_PREFIX := drivers/media/video/samsung/mali_r3p1_lsi/
+MALI_INCLUDE_PREFIX := drivers/media/video/samsung/mali_r3p0_lsi/
 KBUILDROOT =
 
 ifeq ($(CONFIG_MALI_DED_ONLY),y)
@@ -313,7 +313,6 @@ ifeq ($(USING_MALI_SLP_GLOBAL_LOCK),1)
 mali-y += \
 	linux/mali_slp_global_lock.o
 endif
-
 
 ifeq ($(PANIC_ON_WATCHDOG_TIMEOUT),1)
 	EXTRA_CFLAGS += -DUSING_KERNEL_PANIC
