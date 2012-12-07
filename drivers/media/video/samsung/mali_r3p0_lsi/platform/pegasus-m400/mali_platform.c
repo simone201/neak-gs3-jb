@@ -51,7 +51,7 @@
 #define CLK_DIV_STAT_G3D 	0x1003C62C
 #define CLK_DESC 			"clk-divider-status"
 
-#define MALI_BOTTOMLOCK_VOL	600000
+#define MALI_BOTTOMLOCK_VOL	900000
 
 typedef struct mali_runtime_resumeTag{
 	int clk;
@@ -59,14 +59,6 @@ typedef struct mali_runtime_resumeTag{
 }mali_runtime_resume_table;
 
 mali_runtime_resume_table mali_runtime_resume = {266, 900000};
-
-/* start of modification by skkim */
-extern mali_bool init_mali_dvfs_status(int step);
-extern void deinit_mali_dvfs_status(void);
-extern mali_bool mali_dvfs_handler(u32 utilization);
-extern int get_mali_dvfs_control_status(void);
-extern mali_bool set_mali_dvfs_current_step(unsigned int step);
-/* end of modification by skkim */
 
 static struct clk  *ext_xtal_clock = 0;
 static struct clk  *vpll_src_clock = 0;
@@ -209,7 +201,6 @@ mali_bool mali_clk_get(mali_bool bis_vpll)
 				MALI_PRINT( ("MALI Error : failed to get source ext_xtal_clock\n"));
 				return MALI_FALSE;
 			}
-			clk_enable(ext_xtal_clock);
 		}
 
 		if (vpll_src_clock == NULL)
@@ -219,7 +210,6 @@ mali_bool mali_clk_get(mali_bool bis_vpll)
 				MALI_PRINT( ("MALI Error : failed to get source vpll_src_clock\n"));
 				return MALI_FALSE;
 			}
-			clk_enable(vpll_src_clock);
 		}
 
 		if (fout_vpll_clock == NULL)
@@ -229,7 +219,6 @@ mali_bool mali_clk_get(mali_bool bis_vpll)
 				MALI_PRINT( ("MALI Error : failed to get source fout_vpll_clock\n"));
 				return MALI_FALSE;
 			}
-			clk_enable(fout_vpll_clock);
 		}
 
 		if (sclk_vpll_clock == NULL)
@@ -239,7 +228,6 @@ mali_bool mali_clk_get(mali_bool bis_vpll)
 				MALI_PRINT( ("MALI Error : failed to get source sclk_vpll_clock\n"));
 				return MALI_FALSE;
 			}
-			clk_enable(sclk_vpll_clock);
 		}
 
 		if (mali_parent_clock == NULL)
@@ -250,7 +238,6 @@ mali_bool mali_clk_get(mali_bool bis_vpll)
 				MALI_PRINT( ( "MALI Error : failed to get source mali parent clock\n"));
 				return MALI_FALSE;
 			}
-			clk_enable(mali_parent_clock);
 		}
 	}
 	else // mpll
@@ -493,14 +480,13 @@ static _mali_osk_errcode_t enable_mali_clocks(void)
 	MALI_DEBUG_PRINT(3,("enable_mali_clocks mali_clock %p error %d \n", mali_clock, err));
 
 	// set clock rate
-	if (get_mali_dvfs_control_status() != 0 || mali_gpu_clk >= mali_runtime_resume.clk)
+//	if (get_mali_dvfs_control_status() != 0 || mali_gpu_clk >= mali_runtime_resume.clk)
 		mali_clk_set_rate(mali_gpu_clk, GPU_MHZ);
-	else {
-		mali_regulator_set_voltage(mali_runtime_resume.vol, mali_runtime_resume.vol);
-		mali_clk_set_rate(mali_runtime_resume.clk, GPU_MHZ);
-		set_mali_dvfs_current_step(MALI_DVFS_DEFAULT_STEP);
-	}
-	if (mali_gpu_clk <= mali_runtime_resume.clk)
+//	else {
+//		mali_regulator_set_voltage(mali_runtime_resume.vol, mali_runtime_resume.vol);
+//		mali_clk_set_rate(mali_runtime_resume.clk, GPU_MHZ);
+//	}
+//	if (mali_gpu_clk <= mali_runtime_resume.clk)	
 
 	MALI_SUCCESS;
 }

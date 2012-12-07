@@ -83,7 +83,6 @@ mali_dvfs_staycount_table mali_dvfs_staycount[MALI_DVFS_STEPS]={
 // L3 = 266Mhz, 0.90V
 // L4 = 160Mhz, 0.875V
 
-
 mali_dvfs_table mali_dvfs_all[MAX_MALI_DVFS_STEPS]={
 	{160   ,1000000   ,  875000},
 	{266   ,1000000   ,  900000},
@@ -108,7 +107,7 @@ mali_dvfs_threshold_table mali_dvfs_threshold[MALI_DVFS_STEPS]={
 #ifdef EXYNOS4_ASV_ENABLED
 #define ASV_LEVEL     12	/* ASV0, 1, 11 is reserved */
 
-static unsigned int asv_3d_volt_9_table_1ghz_type[MALI_DVFS_STEPS-1][ASV_LEVEL] = {
+static unsigned int asv_3d_volt_9_table_1ghz_type[MALI_DVFS_STEPS - 1][ASV_LEVEL] = {
 	{  975000,  950000,  950000,  950000,  925000,  925000,  925000,  900000,  900000,  900000,  900000,  875000},  /* L3(160Mhz) */
 #if (MALI_DVFS_STEPS > 1)
 	{ 1000000,  975000,  975000,  975000,  950000,  950000,  950000,  900000,  900000,  900000,  900000,  875000},  /* L2(266Mhz) */
@@ -121,7 +120,7 @@ static unsigned int asv_3d_volt_9_table_1ghz_type[MALI_DVFS_STEPS-1][ASV_LEVEL] 
 #endif
 };
 
-static unsigned int asv_3d_volt_9_table[MALI_DVFS_STEPS-1][ASV_LEVEL] = {
+static unsigned int asv_3d_volt_9_table[MALI_DVFS_STEPS - 1][ASV_LEVEL] = {
 	{  950000,  925000,  900000,  900000,  875000,  875000,  875000,  875000,  850000,  850000,  850000,  850000},  /* L3(160Mhz) */
 	{  975000,  950000,  925000,  925000,  925000,  900000,  900000,  875000,  875000,  875000,  875000,  850000},  /* L2(266Mhz) */
 	{ 1050000, 1025000, 1000000, 1000000,  975000,  950000,  950000,  950000,  925000,  925000,  925000,  900000},  /* L1(350Mhz) */
@@ -129,15 +128,15 @@ static unsigned int asv_3d_volt_9_table[MALI_DVFS_STEPS-1][ASV_LEVEL] = {
 };
 
 static unsigned int asv_3d_volt_9_table_for_prime[MALI_DVFS_STEPS][ASV_LEVEL] = {
-	{  950000,  937500,  925000,  912500,  900000,  887500,  875000,  862500,  875000,  862500,  850000,  850000},  /* L4(160Mhz) */
+	{  962500,  937500,  925000,  912500,  900000,  887500,  875000,  862500,  875000,  862500,  850000,  850000,  850000},  /* L4(160Mhz) */
 #if (MALI_DVFS_STEPS > 1)
-	{  975000,  962500,  950000,  937500,  925000,  912500,  900000,  887500,  900000,  887500,  875000,  862500},	/* L3(266Mhz) */
+	{  987500,  962500,  950000,  937500,  925000,  912500,  900000,  887500,  900000,  887500,  875000,  875000,  875000},	/* L3(266Mhz) */
 #if (MALI_DVFS_STEPS > 2)
-	{ 1025000, 1012500, 1000000,  987500,  975000,  962500,  950000,  937500,  950000,  937500,  925000,  912500},	/* L2(350Mhz) */
+	{ 1037500, 1012500, 1000000,  987500,  975000,  962500,  950000,  937500,  950000,  937500,  912500,  900000,  887500},	/* L2(350Mhz) */
 #if (MALI_DVFS_STEPS > 3)
-	{ 1087500, 1075000, 1062500, 1050000, 1037500, 1025000, 1012500, 1000000, 1012500, 1000000,  987500,  975000},	/* L1(440Mhz) */
+	{ 1100000, 1075000, 1062500, 1050000, 1037500, 1025000, 1012500, 1000000, 1012500, 1000000,  975000,  962500,  950000},	/* L1(440Mhz) */
 #if (MALI_DVFS_STEPS > 4)
-	{ 1150000, 1137500, 1125000, 1112500, 1100000, 1087500, 1075000, 1062500, 1087500, 1075000, 1062500, 1050000},	/* L0(533Mhz) */
+	{ 1162500, 1137500, 1125000, 1112500, 1100000, 1087500, 1075000, 1062500, 1075000, 1062500, 1037500, 1025000, 1012500},	/* L0(533Mhz) */
 #endif
 #endif
 #endif
@@ -160,7 +159,6 @@ extern _mali_osk_lock_t *mali_dvfs_lock;
 int mali_runtime_resumed = -1;
 
 static DECLARE_WORK(mali_dvfs_work, mali_dvfs_work_handler);
-
 
 static unsigned int get_mali_dvfs_status(void)
 {
@@ -222,7 +220,6 @@ static mali_bool set_mali_dvfs_status(u32 step,mali_bool boostup)
 	set_mali_dvfs_current_step(validatedStep);
 	/*for future use*/
 	maliDvfsStatus.pCurrentDvfs = &mali_dvfs[validatedStep];
-	
 
 	return MALI_TRUE;
 }
@@ -300,6 +297,7 @@ static unsigned int decideNextStatus(unsigned int utilization)
 	if (mali_runtime_resumed >= 0) {
 		level = mali_runtime_resumed;
 		mali_runtime_resumed = -1;
+		return level;
 	}
 
 	if (mali_dvfs_threshold[maliDvfsStatus.currentStep].upthreshold
@@ -311,7 +309,7 @@ static unsigned int decideNextStatus(unsigned int utilization)
 	}
 
 	if (utilization > (int)(255 * mali_dvfs_threshold[maliDvfsStatus.currentStep].upthreshold / 100) &&
-			level < MALI_DVFS_STEPS - 1) {
+			level < MALI_DVFS_STEPS - 2) {
 		level++;
 	}
 	if (utilization < (int)(255 * mali_dvfs_threshold[maliDvfsStatus.currentStep].downthreshold / 100) &&
@@ -437,7 +435,6 @@ mali_bool mali_dvfs_handler(u32 utilization)
 	return MALI_TRUE;
 }
 
-
 void mali_default_step_set(int step, mali_bool boostup)
 {
 	mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
@@ -468,6 +465,7 @@ int mali_dvfs_bottom_lock_push(int lock_step)
 int mali_dvfs_bottom_lock_pop(void)
 {
 	int prev_status = _mali_osk_atomic_read(&bottomlock_status);
+
 	if (prev_status <= 0) {
 		MALI_PRINT(("gpu bottom lock status is not valid for pop\n"));
 		return -1;

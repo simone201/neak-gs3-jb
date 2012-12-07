@@ -27,9 +27,6 @@
 /* @Enable or Disable Mali GPU Bottom Lock feature */
 #define MALI_GPU_BOTTOM_LOCK 0
 
-/* @Enable or Disable the CPU frequency lock when the GPU clock is 440 Mhz */
-#define CPUFREQ_LOCK_DURING_440 0
-
 #ifdef __cplusplus
 extern "C" {
 #endif
