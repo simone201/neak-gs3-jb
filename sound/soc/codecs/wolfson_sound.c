@@ -1118,7 +1118,7 @@ static unsigned int get_mic_mode(int reg_index)
 		}
 	}
 
-	// Mic mode is concert
+	// Mic mode is noisy
 	if (mic_mode == MIC_MODE_NOISY)
 	{
 		switch(reg_index)
@@ -1139,6 +1139,30 @@ static unsigned int get_mic_mode(int reg_index)
 				return MIC_NOISY_DRC1_3;
 			case 8:
 				return MIC_NOISY_DRC1_4;
+		}
+	}
+
+	// Mic mode is light
+	if (mic_mode == MIC_MODE_LIGHT)
+	{
+		switch(reg_index)
+		{
+			case 1:
+				return MIC_LIGHT_LEFT_VALUE;
+			case 2:
+				return MIC_LIGHT_RIGHT_VALUE;
+			case 3:
+				return MIC_LIGHT_INPUT_MIXER_3;
+			case 4:
+				return MIC_LIGHT_INPUT_MIXER_4;
+			case 5:
+				return MIC_LIGHT_DRC1_1;
+			case 6:
+				return MIC_LIGHT_DRC1_2;
+			case 7:
+				return MIC_LIGHT_DRC1_3;
+			case 8:
+				return MIC_LIGHT_DRC1_4;
 		}
 	}
 
@@ -1766,7 +1790,7 @@ static ssize_t mic_mode_store(struct device *dev, struct device_attribute *attr,
 	ret = sscanf(buf, "%d", &val);
 
 	// check validity of data and update audio hub
-	if ((val >= MIC_MODE_DEFAULT) && (val <= MIC_MODE_NOISY))
+	if ((val >= MIC_MODE_DEFAULT) && (val <= MIC_MODE_LIGHT))
 	{
 		mic_mode = val;
 		set_mic_mode();
