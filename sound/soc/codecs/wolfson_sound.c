@@ -1,7 +1,7 @@
 /*
- * Author: andip71, 30.11.2012
+ * Author: andip71, 31.12.2012
  *
- * Version 1.2
+ * Version 1.4.2
  *
  * credits: Supercurio for ideas and partially code from his Voodoo
  * 	    sound implementation,
@@ -23,6 +23,7 @@
 #include <sound/jack.h>
 
 #include <linux/miscdevice.h>
+#include <linux/switch.h>
 #include <linux/mfd/wm8994/core.h>
 #include <linux/mfd/wm8994/registers.h>
 #include <linux/mfd/wm8994/pdata.h>
@@ -79,11 +80,14 @@ static bool is_eq;
 static unsigned int wm8994_read(struct snd_soc_codec *codec, unsigned int reg);
 static int wm8994_write(struct snd_soc_codec *codec, unsigned int reg, unsigned int value);
 
+extern struct switch_dev android_switch;
+
 static bool debug(int level);
 static bool check_for_call(unsigned int val);
 static bool check_for_socket(unsigned int val);
 static bool check_for_headphone(void);
 static bool check_for_fmradio(void);
+static void handler_headphone_detection(void);
 
 static void set_headphone(void);
 static unsigned int get_headphone_l(unsigned int val);
@@ -314,17 +318,7 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 	// ( for un-plug detection see above, this is covered by checking a register)
 	if (is_socket && !is_headphone)
 	{
-		if (check_for_headphone())
-		{
-			is_headphone = true;
-
-			if (debug(DEBUG_NORMAL))
-				printk("Wolfson-Sound: Headphone or headset found\n");
-
-			// Handler: switch equalizer and set speaker volume (for privacy mode)
-			set_eq();
-			set_speaker();
-		}
+		handler_headphone_detection();
 	}
 
 	// FM radio detection
@@ -509,14 +503,7 @@ static bool check_for_headphone(void)
 	// or headset is currently connected
 	// Note: This always shows status delayed after something has been plugged in or
 	// unplugged !!!
-	if( wm8994->micdet[0].jack != NULL )
-	{
-		if ((wm8994->micdet[0].jack->status & SND_JACK_HEADPHONE) ||
-		(wm8994->micdet[0].jack->status & SND_JACK_HEADSET))
-			return true;
-	}
-
-	return false;
+	return (switch_get_state(&android_switch) > 0);
 }
 
 
@@ -565,6 +552,20 @@ static bool check_for_fmradio(void)
 	return false;
 }
 
+static void handler_headphone_detection(void)
+{
+	if (check_for_headphone())
+	{
+		is_headphone = true;
+		
+		if (debug(DEBUG_NORMAL))
+			printk("wolfson-sound: Headphone or headset found\n");
+
+		// Handler: switch equalizer and set speaker volume (for privacy mode)
+		set_eq();
+		set_speaker();
+	}
+}
 
 static bool debug (int level)
 {
@@ -1321,13 +1322,22 @@ static ssize_t wolfson_sound_store(struct device *dev, struct device_attribute *
 	// store if valid data and only if status has changed, reset all values
 	if (((val == OFF) || (val == ON))&& (val != wolfson_sound))
 	{
+		// print debug info
+		if (debug(DEBUG_NORMAL))
+			printk("wolfson-sound: status %d\n", wolfson_sound);
+
+		// Initialize Wolfson-Sound
 		wolfson_sound = val;
 		reset_wolfson_sound();
-	}
 
-	// print debug info
-	if (debug(DEBUG_NORMAL))
-		printk("Wolfson-Sound: status %d\n", wolfson_sound);
+		// If Wolfson-Sound was switched on, set correct status for
+		// headphone and fm_radio (assuming there is never a call when switching Sound on)
+		if (wolfson_sound == ON)
+		{
+			handler_headphone_detection();
+			is_fmradio = check_for_fmradio();
+		}
+	}
 
 	return count;
 
