@@ -1046,11 +1046,14 @@ static int lsm330dlc_accel_probe(struct i2c_client *client,
 	struct lsm330dlc_accel_data *data;
 	struct accel_platform_data *pdata;
 	int err = 0, retry;
+#ifdef CONFIG_TARGET_LOCALE_KOR
 	int probe_retry_max = 3;
+#endif
 
 	accel_dbgmsg("is started\n");
-
+#ifdef CONFIG_TARGET_LOCALE_KOR
 probe_retry:
+#endif
 	for (retry = 0; retry < 5; retry++) {
 		if (!i2c_check_functionality(client->adapter,
 					     I2C_FUNC_SMBUS_WRITE_BYTE_DATA |
@@ -1324,12 +1327,14 @@ err_misc_register:
 err_read_reg:
 	kfree(data);
 exit:
+#ifdef CONFIG_TARGET_LOCALE_KOR
 	if (probe_retry_max > 0) {
 		pr_err("%s: Failed to probe..(%d try left)\n",
 			__func__, probe_retry_max);
 		probe_retry_max--;
 		goto probe_retry;
 	}
+#endif
 	return err;
 }
 
