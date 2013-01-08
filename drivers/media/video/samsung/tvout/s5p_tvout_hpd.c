@@ -381,7 +381,8 @@ static int s5p_hpd_irq_eint(int irq)
 	} else {
 		HPDIFPRINTK("gpio is low\n");
 #if defined(CONFIG_SAMSUNG_WORKAROUND_HPD_GLANCE) &&\
-	!defined(CONFIG_SAMSUNG_MHL_9290)
+	!defined(CONFIG_SAMSUNG_MHL_9290) &&\
+	!defined(CONFIG_MHL_SII9234)
 		call_sched_mhl_hpd_handler();
 #endif
 		irq_set_irq_type(hpd_struct.irq_n, IRQ_TYPE_LEVEL_HIGH);
@@ -458,7 +459,8 @@ static int s5p_hpd_irq_hdmi(int irq)
 	} else if (flag & (1 << HDMI_IRQ_HPD_UNPLUG)) {
 		HPDIFPRINTK("HPD_LO\n");
 #if defined(CONFIG_SAMSUNG_WORKAROUND_HPD_GLANCE) &&\
-	!defined(CONFIG_SAMSUNG_MHL_9290)
+	!defined(CONFIG_SAMSUNG_MHL_9290) &&\
+	!defined(CONFIG_MHL_SII9234)
 		call_sched_mhl_hpd_handler();
 #endif
 
@@ -643,7 +645,8 @@ static int __devinit s5p_hpd_probe(struct platform_device *pdev)
 	}
 #ifdef	CONFIG_SAMSUNG_WORKAROUND_HPD_GLANCE
 	disable_irq(hpd_struct.irq_n);
-#	if !defined(CONFIG_SAMSUNG_MHL_9290)
+#	if !defined(CONFIG_SAMSUNG_MHL_9290) &&\
+		!defined(CONFIG_MHL_SII9234)
 		hpd_intr_state = s5p_hpd_get_status;
 #	endif
 #endif

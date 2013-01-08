@@ -59,10 +59,6 @@ do {								\
 
 #define HDMI_START_NUM 0x1000
 
-#ifdef CONFIG_CPU_EXYNOS4210
-#define CLOCK_GATING_ON_EARLY_SUSPEND
-#endif
-
 enum s5p_tvout_disp_mode {
 	TVOUT_NTSC_M = 0,
 	TVOUT_PAL_BDGHI,
