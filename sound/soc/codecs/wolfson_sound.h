@@ -1,7 +1,13 @@
 /*
+<<<<<<< HEAD
  * Author: andip71, 24.01.2012
  *
  * Version 1.4.6
+=======
+ * Author: andip71, 10.01.2012
+ *
+ * Version 1.4.3
+>>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
  *
  * credits: Supercurio for ideas and partially code from his Voodoo Sound implementation.
  * 			Gokhanmoral for further modifications to the original code.
@@ -32,7 +38,11 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int valu
 
 // Wolfson sound general
 #define WOLFSON_SOUND_DEFAULT 	0
+<<<<<<< HEAD
 #define WOLFSON_SOUND_VERSION 	"1.4.6"
+=======
+#define WOLFSON_SOUND_VERSION 	"1.4.3"
+>>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
 
 // Debug mode
 #define DEBUG_DEFAULT 		1
