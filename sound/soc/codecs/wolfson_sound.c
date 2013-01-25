@@ -1,7 +1,7 @@
 /*
- * Author: andip71, 10.01.2012
+ * Author: andip71, 25.01.2013
  *
- * Version 1.4.3
+ * Version 1.4.7
  *
  * credits: Supercurio for ideas and partially code from his Voodoo
  * 	    sound implementation,
@@ -114,6 +114,8 @@ static void set_mic_mode(void);
 static unsigned int get_mic_mode(int reg_index);
 static unsigned int get_mic_mode_for_hook(int reg_index, unsigned int value);
 
+static void reset_wolfson_sound(void);
+
 
 /*****************************************/
 // wolfson sound hook functions for
@@ -131,6 +133,16 @@ void Wolfson_sound_hook_wm8994_pcm_probe(struct snd_soc_codec *codec_pointer)
 
 	// Print debug info
 	printk("Wolfson-Sound: codec pointer received\n");
+
+	// Initialize wolfson sound master switch finally
+	wolfson_sound = WOLFSON_SOUND_DEFAULT;
+
+	// If wolfson sound is enabled during driver start, reset to default configuration	
+	if (wolfson_sound == ON)
+	{
+		reset_wolfson_sound();
+		printk("Wolfson-sound: wolfson sound enabled during startup\n");
+	}
 }
 
 
@@ -160,10 +172,10 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 				if (debug(DEBUG_NORMAL))
 					printk("Wolfson-Sound: Call detection new status %d\n", is_call);
 
-				// switch equalizer and mic mode
+				// switch equalizer
 				set_eq();
-				set_mic_mode();
 			}
+
 			break;
 		}
 
@@ -557,7 +569,7 @@ static void handler_headphone_detection(void)
 	if (check_for_headphone())
 	{
 		is_headphone = true;
-		
+
 		if (debug(DEBUG_NORMAL))
 			printk("wolfson-sound: Headphone or headset found\n");
 
@@ -1071,8 +1083,8 @@ static void set_mic_mode(void)
 
 static unsigned int get_mic_mode(int reg_index)
 {
-	// Mic mode is default or we have an active call
-	if ((mic_mode == MIC_MODE_DEFAULT) || is_call)
+	// Mic mode is default
+	if (mic_mode == MIC_MODE_DEFAULT)
 	{
 		switch(reg_index)
 		{
@@ -1119,7 +1131,7 @@ static unsigned int get_mic_mode(int reg_index)
 		}
 	}
 
-	// Mic mode is noisy
+	// Mic mode is concert
 	if (mic_mode == MIC_MODE_NOISY)
 	{
 		switch(reg_index)
@@ -1174,9 +1186,9 @@ static unsigned int get_mic_mode(int reg_index)
 
 static unsigned int get_mic_mode_for_hook(int reg_index, unsigned int value)
 {
-	// if mic mode is default or we have an active call -> return value back to hook
+	// if mic mode is default -> return value back to hook
 	// otherwise, request value for selected mic mode
-	if ((mic_mode == MIC_MODE_DEFAULT) || is_call)
+	if (mic_mode == MIC_MODE_DEFAULT)
 		return value;
 
 	return get_mic_mode(reg_index);
@@ -1340,7 +1352,6 @@ static ssize_t wolfson_sound_store(struct device *dev, struct device_attribute *
 	}
 
 	return count;
-
 }
 
 
@@ -2040,15 +2051,16 @@ static int wolfson_sound_init(void)
 		return 0;
 	}
 
-	// Print debug info
-	printk("Wolfson-Sound: engine version %s started\n", WOLFSON_SOUND_VERSION);
+	// Initialize wolfson sound master switch with OFF per default (will be set to correct
+	// default value when we receive the codec pointer later - avoids startup boot loop)
+	wolfson_sound = OFF;
 
-	// Initialize wolfson sound master switch and default debug level
-	wolfson_sound = WOLFSON_SOUND_DEFAULT;
+	// initialize global variables and default debug level
+	initialize_global_variables();
 	debug_level = DEBUG_DEFAULT;
 
-	// initialize global variables
-	initialize_global_variables();
+	// Print debug info
+	printk("Wolfson-sound: engine version %s started\n", WOLFSON_SOUND_VERSION);
 
 	return 0;
 }
@@ -2061,7 +2073,7 @@ static void wolfson_sound_exit(void)
                            &wolfson_sound_control_group);
 
 	// Print debug info
-	printk("Wolfson-Sound: engine stopped\n");
+	printk("Wolfson-sound: engine stopped\n");
 }
 
 
