@@ -1,13 +1,7 @@
 /*
-<<<<<<< HEAD
  * Author: andip71, 24.01.2013
  *
  * Version 1.4.6
-=======
- * Author: andip71, 10.01.2012
- *
- * Version 1.4.3
->>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
  *
  * credits: Supercurio for ideas and partially code from his Voodoo
  * 	    sound implementation,
@@ -68,6 +62,7 @@ static int fll_tuning;
 static int privacy_mode;
 
 static int mic_mode;
+static unsigned int mic_mode_regcache[8];
 
 static unsigned int debug_register;
 
@@ -120,6 +115,8 @@ static void set_mic_mode(void);
 static unsigned int get_mic_mode(int reg_index);
 static unsigned int get_mic_mode_for_hook(int reg_index, unsigned int value);
 
+static void reset_wolfson_sound(void);
+
 
 /*****************************************/
 // wolfson sound hook functions for
@@ -137,7 +134,6 @@ void Wolfson_sound_hook_wm8994_pcm_probe(struct snd_soc_codec *codec_pointer)
 
 	// Print debug info
 	printk("Wolfson-Sound: codec pointer received\n");
-<<<<<<< HEAD
 
 	// Initialize wolfson sound master switch finally
 	wolfson_sound = WOLFSON_SOUND_DEFAULT;
@@ -149,8 +145,6 @@ void Wolfson_sound_hook_wm8994_pcm_probe(struct snd_soc_codec *codec_pointer)
 		printk("Wolfson-sound: wolfson sound enabled during startup\n");
 	}
 
-=======
->>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
 }
 
 
@@ -183,27 +177,6 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 
 	switch (reg)
 	{
-<<<<<<< HEAD
-=======
-
-		// call detection
-		case WM8994_AIF2_CONTROL_2:
-		{
-			if (is_call != check_for_call(val))
-			{
-				is_call = !is_call;
-
-				if (debug(DEBUG_NORMAL))
-					printk("Wolfson-Sound: Call detection new status %d\n", is_call);
-
-				// switch equalizer and mic mode
-				set_eq();
-				set_mic_mode();
-			}
-			break;
-		}
-
->>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
 		// socket connection/disconnection detection (incl. headphone un-plug)
 		// (see headphone detection below for plug-in)
 		case WM1811_JACKDET_CTRL:
@@ -296,6 +269,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: left input volume
 		case WM8994_LEFT_LINE_INPUT_1_2_VOLUME:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[0] = val;
 			newval = get_mic_mode_for_hook(1, val);
 			break;
 		}
@@ -304,6 +279,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: right input volume
 		case WM8994_RIGHT_LINE_INPUT_1_2_VOLUME:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[1] = val;
 			newval = get_mic_mode_for_hook(2, val);
 			break;
 		}
@@ -311,6 +288,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: input mixer 3 = left channel
 		case WM8994_INPUT_MIXER_3:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[2] = val;
 			newval = get_mic_mode_for_hook(3, val);
 			break;
 		}
@@ -318,6 +297,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: input mixer 4 = right channel
 		case WM8994_INPUT_MIXER_4:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[3] = val;
 			newval = get_mic_mode_for_hook(4, val);
 			break;
 		}
@@ -325,6 +306,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: dynamic range control 2_1
 		case WM8994_AIF1_DRC2_1:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[4] = val;
 			newval = get_mic_mode_for_hook(5, val);
 			break;
 		}
@@ -332,6 +315,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: dynamic range control 2_2
 		case WM8994_AIF1_DRC2_2:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[5] = val;
 			newval = get_mic_mode_for_hook(6, val);
 			break;
 		}
@@ -339,6 +324,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: dynamic range control 2_3
 		case WM8994_AIF1_DRC2_3:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[6] = val;
 			newval = get_mic_mode_for_hook(7, val);
 			break;
 		}
@@ -346,6 +333,8 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// Microphone: dynamic range control 2_4
 		case WM8994_AIF1_DRC2_4:
 		{
+			// cache original sound driver value before returning tweaked value
+			mic_mode_regcache[7] = val;
 			newval = get_mic_mode_for_hook(8, val);
 			break;
 		}
@@ -594,7 +583,7 @@ static void handler_headphone_detection(void)
 	if (check_for_headphone())
 	{
 		is_headphone = true;
-		
+
 		if (debug(DEBUG_NORMAL))
 			printk("wolfson-sound: Headphone or headset found\n");
 
@@ -603,6 +592,7 @@ static void handler_headphone_detection(void)
 		set_speaker();
 	}
 }
+
 
 static bool debug (int level)
 {
@@ -1109,26 +1099,27 @@ static void set_mic_mode(void)
 static unsigned int get_mic_mode(int reg_index)
 {
 	// Mic mode is default or we have an active call
+	// (we take the values the original sound driver from the cache)
 	if ((mic_mode == MIC_MODE_DEFAULT) || is_call)
 	{
 		switch(reg_index)
 		{
 			case 1:
-				return MIC_DEFAULT_LEFT_VALUE;
+				return mic_mode_regcache[0];
 			case 2:
-				return MIC_DEFAULT_RIGHT_VALUE;
+				return mic_mode_regcache[1];
 			case 3:
-				return MIC_DEFAULT_INPUT_MIXER_3;
+				return mic_mode_regcache[2];
 			case 4:
-				return MIC_DEFAULT_INPUT_MIXER_4;
+				return mic_mode_regcache[3];
 			case 5:
-				return MIC_DEFAULT_DRC1_1;
+				return mic_mode_regcache[4];
 			case 6:
-				return MIC_DEFAULT_DRC1_2;
+				return mic_mode_regcache[5];
 			case 7:
-				return MIC_DEFAULT_DRC1_3;
+				return mic_mode_regcache[6];
 			case 8:
-				return MIC_DEFAULT_DRC1_4;
+				return mic_mode_regcache[7];
 		}
 	}
 
@@ -1377,7 +1368,6 @@ static ssize_t wolfson_sound_store(struct device *dev, struct device_attribute *
 	}
 
 	return count;
-
 }
 
 
@@ -2077,14 +2067,14 @@ static int wolfson_sound_init(void)
 		return 0;
 	}
 
-	// Print debug info
-	printk("Wolfson-Sound: engine version %s started\n", WOLFSON_SOUND_VERSION);
+	// Initialize wolfson sound master switch with OFF per default (will be set to correct
+	// default value when we receive the codec pointer later - avoids startup boot loop)
+	wolfson_sound = OFF;
 
-	// Initialize wolfson sound master switch and default debug level
-	wolfson_sound = WOLFSON_SOUND_DEFAULT;
+	// initialize global variables and default debug level
+	initialize_global_variables();
 	debug_level = DEBUG_DEFAULT;
 
-<<<<<<< HEAD
 	// The mic mode register default values ore only initialized once when
 	// the driver is loaded (as values get cached once wolfson sound is switched on)
 	mic_mode_regcache[0] = MIC_DEFAULT_LEFT_VALUE;
@@ -2098,10 +2088,6 @@ static int wolfson_sound_init(void)
 
 	// Print debug info
 	printk("Wolfson-sound: engine version %s started\n", WOLFSON_SOUND_VERSION);
-=======
-	// initialize global variables
-	initialize_global_variables();
->>>>>>> parent of 8e8de6b... wolfson_sound: updated to 1.4.5
 
 	return 0;
 }
@@ -2114,7 +2100,7 @@ static void wolfson_sound_exit(void)
                            &wolfson_sound_control_group);
 
 	// Print debug info
-	printk("Wolfson-Sound: engine stopped\n");
+	printk("Wolfson-sound: engine stopped\n");
 }
 
 
