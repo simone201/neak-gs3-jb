@@ -10,7 +10,7 @@
 
 OSKOS :=linux
 FILES_PREFIX=
-MALI_INCLUDE_PREFIX := drivers/media/video/samsung/mali_r3p0_lsi/
+MALI_INCLUDE_PREFIX := drivers/media/video/samsung/mali_r3p1_lsi/
 KBUILDROOT =
 
 ifeq ($(CONFIG_MALI_DED_ONLY),y)
