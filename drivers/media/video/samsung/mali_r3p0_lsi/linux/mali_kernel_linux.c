@@ -15,7 +15,7 @@
 #include <linux/module.h>   /* kernel module definitions */
 #include <linux/fs.h>       /* file system operations */
 #include <linux/cdev.h>     /* character device definitions */
-#include <linux/mm.h>       /* memory mananger definitions */
+#include <linux/mm.h>       /* memory manager definitions */
 #include <linux/mali/mali_utgard_ioctl.h>
 #include "mali_kernel_common.h"
 #include "mali_session.h"
