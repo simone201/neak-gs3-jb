@@ -94,7 +94,6 @@ struct mmc_ext_csd {
 
 	unsigned int            feature_support;
 #define MMC_DISCARD_FEATURE	BIT(0)                  /* CMD38 feature */
-#define MMC_POWEROFF_NOTIFY_FEATURE	BIT(1)		/* PON feature */
 };
 
 struct sd_scr {

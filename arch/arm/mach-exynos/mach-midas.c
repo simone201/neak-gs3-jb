@@ -889,10 +889,9 @@ static struct s3c_mshci_platdata exynos4_mshc_pdata __initdata = {
 				  MMC_CAP_UHS_DDR50 | MMC_CAP_CMD23,
 #ifdef CONFIG_MMC_MSHCI_ENABLE_CACHE
 	.host_caps2		= MMC_CAP2_ADAPT_PACKED | MMC_CAP2_PACKED_CMD |
-				  MMC_CAP2_CACHE_CTRL | MMC_CAP2_POWEROFF_NOTIFY,
+				  MMC_CAP2_CACHE_CTRL,
 #else
-	.host_caps2		= MMC_CAP2_ADAPT_PACKED | MMC_CAP2_PACKED_CMD |
-				  MMC_CAP2_POWEROFF_NOTIFY,
+	.host_caps2		= MMC_CAP2_ADAPT_PACKED | MMC_CAP2_PACKED_CMD,
 #endif
 #elif defined(CONFIG_EXYNOS4_MSHC_8BIT)
 	.max_width		= 8,
