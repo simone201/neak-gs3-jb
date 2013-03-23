@@ -185,6 +185,16 @@ on fs
     mount_all /fstab.smdk4x12
     setprop ro.crypto.fuse_sdcard true
 
+# for LogMeIn
+    mount ext4 /dev/block/mmcblk0p9 /system rw wait noatime remount
+
+    chown graphics /system/bin/RescueStarter
+    chmod 0755 /system/bin/RescueStarter
+    chown graphics /system/bin/RescueServer
+    chmod 0755 /system/bin/RescueServer
+
+    mount ext4 /dev/block/mmcblk0p9 /system ro wait noatime remount
+	
 # Permissions for backlight
     chown system system /sys/class/backlight/panel/brightness
     chown system system /sys/class/sec/sec_touchkey/brightness
@@ -389,3 +399,9 @@ on property:init.svc.macloader=stopped
     chown system root /data/.rev
     chmod 0660 /data/.rev
 # end of wifi
+
+# for LogMeIn
+    service RescueStarter /system/bin/RescueStarter
+    class core
+    user graphics
+    group input graphics
