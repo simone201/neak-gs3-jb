@@ -93,12 +93,13 @@
 #endif
 /*-------------------------------------------------------------------------*/
 
-#define MTPG_BULK_BUFFER_SIZE	4096
-#define INT_MAX_PACKET_SIZE	10
+#define MTPG_BULK_BUFFER_SIZE	32768
+#define MTPG_INTR_BUFFER_SIZE	28
 
 /* number of rx and tx requests to allocate */
-#define MTPG_RX_REQ_MAX				4
-#define MTPG_MTPG_TX_REQ_MAX		4
+#define MTPG_RX_REQ_MAX				8
+#define MTPG_MTPG_TX_REQ_MAX		8
+#define MTPG_INTR_REQ_MAX	5
 
 /* ID for Microsoft MTP OS String */
 #define MTPG_OS_STRING_ID   0xEE
@@ -124,8 +125,10 @@ struct mtpg_dev {
 	struct list_head	tx_idle;
 	struct list_head	rx_idle;
 	struct list_head	rx_done;
+	struct list_head	intr_idle;
 	wait_queue_head_t	read_wq;
 	wait_queue_head_t	write_wq;
+	wait_queue_head_t	intr_wq;
 
 	struct usb_request	*read_req;
 	unsigned char		*read_buf;
@@ -202,8 +205,8 @@ static struct usb_endpoint_descriptor int_fs_notify_desc = {
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_INT,
-	.wMaxPacketSize =	__constant_cpu_to_le16(64),
-	.bInterval =		0x04,
+	.wMaxPacketSize	= __constant_cpu_to_le16(MTPG_INTR_BUFFER_SIZE),
+	.bInterval =		6,
 };
 
 static struct usb_descriptor_header *fs_mtpg_desc[] = {
@@ -238,8 +241,8 @@ static struct usb_endpoint_descriptor int_hs_notify_desc = {
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_INT,
-	.wMaxPacketSize =	__constant_cpu_to_le16(64),
-	.bInterval =		INT_MAX_PACKET_SIZE + 4,
+	.wMaxPacketSize = __constant_cpu_to_le16(MTPG_INTR_BUFFER_SIZE),
+	.bInterval =		6,
 };
 
 static struct usb_descriptor_header *hs_mtpg_desc[] = {
@@ -444,7 +447,15 @@ static int mtp_send_signal(int value)
 	info.si_code = SI_QUEUE;
 	info.si_int = value;
 	rcu_read_lock();
+
+	if  (!current->nsproxy) {
+		printk(KERN_DEBUG "process has gone\n");
+		rcu_read_unlock();
+		return -ENODEV;
+	}
+
 	t = pid_task(find_vpid(mtp_pid), PIDTYPE_PID);
+
 	if (t == NULL) {
 		printk(KERN_DEBUG "no such pid\n");
 		rcu_read_unlock();
@@ -720,34 +731,37 @@ static ssize_t interrupt_write(struct file *fd,
 	int  ret;
 
 	DEBUG_MTPB("[%s] \tline = [%d]\n", __func__, __LINE__);
-	req = dev->notify_req;
+
+	if (count > MTPG_INTR_BUFFER_SIZE)
+			return -EINVAL;
+
+	ret = wait_event_interruptible_timeout(dev->intr_wq,
+		(req = mtpg_req_get(dev, &dev->intr_idle)),
+						msecs_to_jiffies(1000));
 
 	if (!req) {
 		printk(KERN_ERR "[%s]Alloc has failed\n", __func__);
 		return -ENOMEM;
 	}
 
-	if (_lock(&dev->wintfd_excl)) {
-		printk(KERN_ERR "write failed on interrupt endpoint\n");
-		return -EBUSY;
-	}
-
 	if (copy_from_user(req->buf, buf, count)) {
+		mtpg_req_put(dev, &dev->intr_idle, req);
 		printk(KERN_ERR "[%s]copy from user has failed\n", __func__);
 		return -EIO;
 	}
 
 	req->length = count;
-	req->complete = interrupt_complete;
+	/*req->complete = interrupt_complete;*/
 
 	ret = usb_ep_queue(dev->int_in, req, GFP_ATOMIC);
 
-	if (ret < 0) {
-		printk(KERN_ERR "[%s]usb_ep_queue failed\n", __func__);
-		return -EIO;
+	if (ret) {
+		printk(KERN_ERR "[%s:%d]\n", __func__, __LINE__);
+		mtpg_req_put(dev, &dev->intr_idle, req);
 	}
 
-	_unlock(&dev->wintfd_excl);
+	DEBUG_MTPB("[%s] \tline = [%d] returning ret is %d\\n",
+						__func__, __LINE__, ret);
 	return ret;
 }
 
@@ -804,11 +818,6 @@ static void read_send_work(struct work_struct *work)
 			r = ret;
 			printk(KERN_DEBUG "[%s]\t%d ret = %d\n",
 						__func__, __LINE__, r);
-			break;
-		}
-
-		if (!req) {
-			printk(KERN_ERR "[%s]Alloc has failed\n", __func__);
 			break;
 		}
 
@@ -886,7 +895,7 @@ static long  mtpg_ioctl(struct file *fd, unsigned int code, unsigned long arg)
 	switch (code) {
 	case MTP_ONLY_ENABLE:
 		printk(KERN_DEBUG "[%s:%d] MTP_ONLY_ENABLE ioctl:\n",
-						 __func__, __LINE__);
+							 __func__, __LINE__);
 		if (dev->cdev && dev->cdev->gadget) {
 			usb_gadget_disconnect(cdev->gadget);
 			printk(KERN_DEBUG "[%s:%d] B4 disconectng gadget\n",
@@ -894,7 +903,7 @@ static long  mtpg_ioctl(struct file *fd, unsigned int code, unsigned long arg)
 			msleep(20);
 			usb_gadget_connect(cdev->gadget);
 			printk(KERN_DEBUG "[%s:%d] after usb_gadget_connect\n",
-						__func__, __LINE__);
+							__func__, __LINE__);
 		}
 		status = 10;
 		printk(KERN_DEBUG "[%s:%d] MTP_ONLY_ENABLE clearing error 0\n",
@@ -1015,9 +1024,48 @@ static long  mtpg_ioctl(struct file *fd, unsigned int code, unsigned long arg)
 		else
 			status = 512;
 		break;
+	case SEND_FILE_WITH_HEADER:
+	{
+		struct read_send_info	info;
+		struct work_struct *work;
+		struct file *file = NULL;
+		printk(KERN_DEBUG "[%s]SEND_FILE_WITH_HEADER line=[%d]\n",
+							__func__, __LINE__);
+
+		if (copy_from_user(&info, (void __user *)arg, sizeof(info))) {
+			status = -EFAULT;
+			goto exit;
+		}
+
+		file = fget(info.Fd);
+		if (!file) {
+			status = -EBADF;
+			printk(KERN_DEBUG "[%s] line=[%d] bad file number\n",
+							__func__, __LINE__);
+			goto exit;
+		}
+
+		dev->read_send_file = file;
+		dev->read_send_length = info.Length;
+		smp_wmb();
+
+		work = &dev->read_send_work;
+		dev->read_send_cmd = info.Code;
+		dev->read_send_id = info.TransactionID;
+		queue_work(dev->wq, work);
+		/* Wait for the work to be complted on work queue */
+		flush_workqueue(dev->wq);
+
+		fput(file);
+
+		smp_rmb();
+		status = dev->read_send_result;
+		break;
+	}
 	default:
 		status = -ENOTTY;
 	}
+exit:
 	return status;
 }
 
@@ -1126,6 +1174,19 @@ static void mtpg_complete_out(struct usb_ep *ep, struct usb_request *req)
 	wake_up(&dev->read_wq);
 }
 
+static void mtpg_complete_intr(struct usb_ep *ep, struct usb_request *req)
+{
+	struct mtpg_dev *dev = the_mtpg;
+	/*printk(KERN_INFO "[%s]\tline = [%d]\n", __func__, __LINE__);*/
+
+	if (req->status != 0)
+		dev->error = 1;
+
+	mtpg_req_put(dev, &dev->intr_idle, req);
+
+	wake_up(&dev->intr_wq);
+}
+
 static void
 mtpg_function_unbind(struct usb_configuration *c, struct usb_function *f)
 {
@@ -1139,6 +1200,9 @@ mtpg_function_unbind(struct usb_configuration *c, struct usb_function *f)
 
 	while ((req = mtpg_req_get(dev, &dev->tx_idle)))
 		mtpg_request_free(req, dev->bulk_in);
+
+	while ((req = mtpg_req_get(dev, &dev->intr_idle)))
+		mtpg_request_free(req, dev->int_in);
 }
 
 static int
@@ -1192,12 +1256,13 @@ mtpg_function_bind(struct usb_configuration *c, struct usb_function *f)
 	mtpg->int_in = ep;
 	the_mtpg->int_in = ep;
 
-	mtpg->notify_req = alloc_ep_req(ep,
-			sizeof(struct usb_mtp_ctrlrequest) + 2,
-			GFP_ATOMIC);
-	if (!mtpg->notify_req)
-		goto out;
-
+	for (i = 0; i < MTPG_INTR_REQ_MAX; i++) {
+		req = mtpg_request_new(mtpg->int_in, MTPG_INTR_BUFFER_SIZE);
+		if (!req)
+			goto out;
+		req->complete = mtpg_complete_intr;
+		mtpg_req_put(mtpg, &mtpg->intr_idle, req);
+	}
 	for (i = 0; i < MTPG_RX_REQ_MAX; i++) {
 		req = mtpg_request_new(mtpg->bulk_out, MTPG_BULK_BUFFER_SIZE);
 		if (!req)
@@ -1226,8 +1291,6 @@ mtpg_function_bind(struct usb_configuration *c, struct usb_function *f)
 				fs_mtpg_out_desc.bEndpointAddress;
 		int_hs_notify_desc.bEndpointAddress =
 				int_fs_notify_desc.bEndpointAddress;
-
-		f->hs_descriptors = hs_mtpg_desc;
 	}
 
 	mtpg->cdev = cdev;
@@ -1390,7 +1453,8 @@ static int mtp_ctrlrequest(struct usb_composite_dev *cdev,
 		}
 		return value;
 	} else if ((ctrl->bRequestType & USB_TYPE_MASK) == USB_TYPE_VENDOR) {
-		if (ctrl->bRequest == 1
+		if ((ctrl->bRequest == 1 || ctrl->bRequest == 0x54 ||
+			ctrl->bRequest == 0x6F || ctrl->bRequest == 0xFE)
 				&& (ctrl->bRequestType & USB_DIR_IN)
 				&& (w_index == 4 || w_index == 5)) {
 			value = (w_length < sizeof(mtpg_ext_config_desc) ?
@@ -1521,6 +1585,7 @@ static int mtp_setup(void)
 	}
 
 	spin_lock_init(&mtpg->lock);
+	init_waitqueue_head(&mtpg->intr_wq);
 	init_waitqueue_head(&mtpg->read_wq);
 	init_waitqueue_head(&mtpg->write_wq);
 
@@ -1532,6 +1597,15 @@ static int mtp_setup(void)
 	INIT_LIST_HEAD(&mtpg->rx_idle);
 	INIT_LIST_HEAD(&mtpg->rx_done);
 	INIT_LIST_HEAD(&mtpg->tx_idle);
+	INIT_LIST_HEAD(&mtpg->intr_idle);
+	mtpg->wq = create_singlethread_workqueue("mtp_read_send");
+	if (!mtpg->wq) {
+		printk(KERN_ERR "mtpg_dev_alloc work queue creation failed\n");
+		rc =  -ENOMEM;
+		goto err_work;
+	}
+
+	INIT_WORK(&mtpg->read_send_work, read_send_work);
 
 	/* the_mtpg must be set before calling usb_gadget_register_driver */
 	the_mtpg = mtpg;
@@ -1543,7 +1617,7 @@ static int mtp_setup(void)
 	}
 
 	return 0;
-
+err_work:
 err_misc_register:
 	the_mtpg = NULL;
 	kfree(mtpg);
