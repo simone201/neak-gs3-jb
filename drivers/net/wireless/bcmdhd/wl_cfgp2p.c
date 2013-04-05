@@ -1698,6 +1698,11 @@ wl_cfgp2p_tx_action_frame(struct wl_priv *wl, struct net_device *dev,
 	CFGP2P_INFO(("channel : %u , dwell time : %u\n",
 	    af_params->channel, af_params->dwell_time));
 
+#if defined(CONFIG_MACH_M3_JPN_DCM)
+	if (!wl)
+		return BCME_ERROR;
+#endif
+
 	wl_clr_p2p_status(wl, ACTION_TX_COMPLETED);
 	wl_clr_p2p_status(wl, ACTION_TX_NOACK);
 #define MAX_WAIT_TIME 2000

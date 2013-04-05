@@ -551,9 +551,6 @@ bool g_pm_control;
 void sec_control_pm(dhd_pub_t *dhd, uint *);
 #endif
 
-#if 1
-int force_hang = 0;
-#endif
 
 #if defined(CONFIG_WIRELESS_EXT)
 struct iw_statistics *dhd_get_wireless_stats(struct net_device *dev);
@@ -2441,16 +2438,6 @@ static bool dhd_check_hang(struct net_device *net, dhd_pub_t *dhdp, int error)
 		net_os_send_hang_message(net);
 		return TRUE;
 	}
-
-#if 1
-        if (force_hang) {
-                DHD_ERROR(("***%s(): Event HANG send up by forecly", __FUNCTION__));
-                net_os_send_hang_message(net);
-                force_hang = 0;
-                return FALSE;
-        }
-#endif
-
 	return FALSE;
 }
 
@@ -4815,9 +4802,6 @@ dhd_os_get_image_block(char *buf, int len, void *image)
 	rdlen = kernel_read(fp, fp->f_pos, buf, len);
 	if (rdlen > 0)
 		fp->f_pos += rdlen;
-
-  if(rdlen < 0)
-	DHD_ERROR(("%s: read fail. %d\n", __FUNCTION__,rdlen));
 
 	return rdlen;
 }

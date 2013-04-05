@@ -97,7 +97,6 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"SI", "SI", 1},
 	{"SK", "SK", 1},
 	{"TR", "TR", 7},
-	{"UA", "UA", 2},
 	{"TW", "TW", 2},
 	{"IR", "XZ", 11},	/* Universal if Country code is IRAN, (ISLAMIC REPUBLIC OF) */
 	{"SD", "XZ", 11},	/* Universal if Country code is SUDAN */
@@ -108,14 +107,23 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"MH", "XZ", 11},	/* Universal if Country code is MARSHALL ISLANDS */
 	{"PK", "XZ", 11},	/* Universal if Country code is PAKISTAN */
 #ifdef BCM4334_CHIP
-	{"RU", "RU", 5},
-	{"SG", "SG", 4},
-	{"US", "US", 46}
+  {"RU", "RU", 13},
+  {"SG", "SG", 4},
+  {"US", "US", 46},
+  {"UA", "UA", 8},
+  {"CO", "CO", 4},
+  {"ID", "ID", 1},
+  {"LA", "LA", 1},
+  {"LB", "LB", 2},
+  {"VN", "VN", 4},
 #endif
 #ifdef BCM4330_CHIP
-	{"RU", "RU", 1},
-	{"US", "US", 5}
+	{"RU", "RU", 13},
+	{"US", "US", 5},
+	{"UA", "UY", 0},
+	{"AD", "AL", 0},
 #endif
+	{"UA", "UA", 2}
 };
 
 /* Customized Locale convertor
