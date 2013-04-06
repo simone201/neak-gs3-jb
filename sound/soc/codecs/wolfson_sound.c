@@ -22,6 +22,7 @@
 #include <sound/soc.h>
 #include <sound/core.h>
 #include <sound/jack.h>
+#include <sound/soc-dapm.h> 
 
 #include <linux/miscdevice.h>
 #include <linux/switch.h>
@@ -86,7 +87,6 @@ static unsigned int regcache[REGDUMP_BANKS * REGDUMP_REGISTERS + 1];	// register
 
 static int mic_level;			// internal mic level
 
-
 /*****************************************/
 // Internal function declarations
 /*****************************************/
@@ -97,8 +97,10 @@ static int wm8994_write(struct snd_soc_codec *codec, unsigned int reg, unsigned 
 extern struct switch_dev android_switch;
 
 static bool debug(int level);
-static bool check_for_call(bool load_register, unsigned int val);
+static bool check_for_dapm(enum snd_soc_dapm_type dapm_type, char* widget_name);
+static bool check_for_call(void);
 static bool check_for_socket(unsigned int val);
+static bool check_for_speaker(void);
 static bool check_for_headphone(void);
 static bool check_for_fmradio(void);
 static void handler_headphone_detection(void);
@@ -183,7 +185,7 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// call detection
 		case WM8994_AIF2_CONTROL_2:
 		{
-			if (is_call != check_for_call(false, val))
+			if (is_call != check_for_call())
 			{
 				is_call = !is_call;
 
@@ -205,6 +207,9 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 		// (see headphone detection below for plug-in)
 		case WM1811_JACKDET_CTRL:
 		{
+			// Update the call boolean variable for the equalizer
+			is_call = check_for_call();
+			
 			if (check_for_socket(val))
 			{
 				is_socket = true;
@@ -362,7 +367,6 @@ unsigned int Wolfson_sound_hook_wm8994_write(unsigned int reg, unsigned int val)
 
 static int wm8994_readable(struct snd_soc_codec *codec, unsigned int reg)
 {
-	//struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 	struct wm8994 *control = codec->control_data;
 
 	switch (reg) {
@@ -485,22 +489,42 @@ static unsigned int wm8994_read(struct snd_soc_codec *codec,
 // Internal helper functions
 /*****************************************/
 
-static bool check_for_call(bool load_register, unsigned int val)
+static bool check_for_dapm(enum snd_soc_dapm_type dapm_type, char* widget_name)
 {
-	// if a check outside the write hook should be performed, the current register
-	// value needs to be loaded first
-	if (load_register)
-	{
-		val = wm8994_read(codec, WM8994_AIF2_CONTROL_2);
-	}
+	struct snd_soc_dapm_widget *w;
 
-	// check via register WM8994_AIF2DACR if currently call active
-	if (!(val & WM8994_AIF2DACR_SRC_MASK))
-		return true;
+	/* Iterate widget list and find power mode of given widget per its name */
+	list_for_each_entry(w, &codec->card->widgets, list) {
+		if (w->dapm != &codec->dapm)
+			continue;
+
+		/* DAPM types in include/sound/soc-dapm.h */
+		if (w->id == dapm_type && !strcmp(w->name, widget_name))
+			return w->power;
+	}
 
 	return false;
 }
 
+static bool check_for_fmradio(void) 
+{
+	return check_for_dapm(snd_soc_dapm_line, "FM In");
+}
+
+static bool check_for_call(void) 
+{
+	return check_for_dapm(snd_soc_dapm_spk, "RCV");
+}
+
+static bool check_for_speaker(void) 
+{
+	return check_for_dapm(snd_soc_dapm_spk, "SPK");
+}
+
+static bool check_for_headphone(void)
+{
+	return (switch_get_state(&android_switch) > 0); 
+}
 
 static bool check_for_socket(unsigned int val)
 {
@@ -509,62 +533,6 @@ static bool check_for_socket(unsigned int val)
 		return false;
 
 	return true;
-}
-
-
-static bool check_for_headphone(void)
-{
-	// check status of micdet zero jacket to find out whether headphone
-	// or headset is currently connected
-	// Note: This always shows status delayed after something has been plugged in or
-	// unplugged !!!
-	return (switch_get_state(&android_switch) > 0);
-}
-
-
-static bool check_for_fmradio(void)
-{
-	struct snd_soc_dapm_widget *w;
-
-	// loop through widget list to find widget for FM radio and check
-	// power state of it
-	list_for_each_entry(w, &codec->card->widgets, list)
-	{
-		if (w->dapm != &codec->dapm)
-			continue;
-
-		switch (w->id)
-		{
-			case snd_soc_dapm_line:
-				if (w->name)
-				{
-					if(strstr(w->name,"FM In") != 0)
-					{
-						if((w->power) != 0)
-							return true;
-						else
-							return false;
-					}
-				}
-				break;
-			case snd_soc_dapm_mic:
-			case snd_soc_dapm_hp:
-			case snd_soc_dapm_spk:
-			case snd_soc_dapm_micbias:
-			case snd_soc_dapm_dac:
-			case snd_soc_dapm_adc:
-			case snd_soc_dapm_pga:
-			case snd_soc_dapm_out_drv:
-			case snd_soc_dapm_mixer:
-			case snd_soc_dapm_mixer_named_ctl:
-			case snd_soc_dapm_supply:
-				break;
-			default:
-				break;
-		}
-	}
-
-	return false;
 }
 
 static void handler_headphone_detection(void)
@@ -1462,7 +1430,7 @@ static void reset_wolfson_sound(void)
 	val = wm8994_read(codec, WM1811_JACKDET_CTRL);
 	is_socket = check_for_socket(val);
 
-	is_call = check_for_call(true, 0);
+	is_call = check_for_call();
 	handler_headphone_detection();
 	is_fmradio = check_for_fmradio();
 
