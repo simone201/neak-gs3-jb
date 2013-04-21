@@ -535,7 +535,7 @@ on boot
 
 # wifi display
     write /proc/sys/net/core/wmem_max   2097152
-    chmod 0666 /dev/graphics/fb5
+    chmod 0660 /dev/graphics/fb5
 
 # permission for HDMI audio path
     chown media audio /sys/class/hdmi_audio/hdmi_audio/hdmi_audio_set_ext
@@ -717,7 +717,7 @@ service media /system/bin/mediaserver
     class main
     user media
     group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc sdcard_rw sdcard_r skt lgt_gid media_rw
-    ioprio rt 4
+	ioprio rt 4
 
 service powersnd /system/bin/samsungpowersoundplay
     class main
@@ -808,17 +808,6 @@ service immvibed /system/bin/immvibed
     user shell
     group shell
     oneshot
-
-# service for TZPR provisioning version check app
-service scranton_RD /system/bin/scranton_RD
-    class main
-    user root
-    disabled
-    oneshot
-
-# start for TZPR provisioning version check app
-on property:sys.mobicoredaemon.enable=true
-    start scranton_RD
 
 service sshd /system/bin/start-ssh
     class main
