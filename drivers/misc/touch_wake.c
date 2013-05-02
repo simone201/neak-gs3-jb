@@ -218,7 +218,6 @@ void proximity_off(void)
 {   
 	timed_out = true;
 	prox_near = false;
-
 	return;
 }
 EXPORT_SYMBOL(proximity_off);

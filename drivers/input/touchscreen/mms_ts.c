@@ -783,7 +783,7 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 			touch_is_pressed++;
 	}
 #ifdef CONFIG_TOUCH_WAKE
-  touch_press();
+	touch_press();
 #endif
 
 #if TOUCH_BOOSTER
@@ -3108,7 +3108,6 @@ static void mms_ts_early_suspend(struct early_suspend *h)
 	info = container_of(h, struct mms_ts_info, early_suspend);
 	mms_ts_suspend(&info->client->dev);
 #endif
-
 }
 
 static void mms_ts_late_resume(struct early_suspend *h)

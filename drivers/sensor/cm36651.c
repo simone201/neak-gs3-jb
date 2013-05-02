@@ -514,9 +514,10 @@ static ssize_t proximity_enable_store(struct device *dev,
 		input_sync(cm36651->proximity_input_dev);
 
 #ifdef CONFIG_TOUCH_WAKE
-		if (val) { // true if proximity detected
+		if (!val) // true if proximity detected
 			proximity_detected();
-		}
+		else
+			proximity_off();
 #endif 
 
 		enable_irq(cm36651->irq);
