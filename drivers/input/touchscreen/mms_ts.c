@@ -50,10 +50,6 @@
 
 #include <asm/unaligned.h>
 
-#ifdef CONFIG_AOSP_ROM_SUPPORT
-#include "../keyboard/cypress/cypress-touchkey.h"
-#endif
-
 #ifdef CONFIG_TOUCHBOOST_CONTROL
 #include <linux/touch_boost_control.h>
 #endif
@@ -725,10 +721,6 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 				, angle, palm);
 #else
 			if (info->finger_state[id] != 0) {
-#ifdef CONFIG_AOSP_ROM_SUPPORT
-				// report state to cypress-touchkey for backlight timeout
-				touchscreen_state_report(0);
-#endif
 				dev_notice(&client->dev,
 					"finger [%d] up, palm %d\n", id, palm);
 			}
@@ -766,10 +758,6 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 #else
 		if (info->finger_state[id] == 0) {
-#ifdef CONFIG_AOSP_ROM_SUPPORT
-			// report state to cypress-touchkey for backlight timeout
-			touchscreen_state_report(1);
-#endif
 			info->finger_state[id] = 1;
 			dev_notice(&client->dev,
 				"finger [%d] down, palm %d\n", id, palm);
