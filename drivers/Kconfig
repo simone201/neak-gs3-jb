@@ -165,4 +165,6 @@ source "drivers/interceptor/Kconfig"
 
 source "drivers/j4fs/Kconfig"
 
+source "drivers/exfat/Kconfig"
+
 endmenu
